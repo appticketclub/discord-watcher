@@ -1,0 +1,15 @@
+{
+  "name": "ticketclub-discord-watcher",
+  "version": "1.0.0",
+  "description": "Chrome extension for watching Discord alerts and opening Ticketmaster links",
+  "main": "background.js",
+  "scripts": {
+    "build": "node obfuscate.js"
+  },
+  "keywords": ["chrome-extension", "ticketmaster", "discord"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1"
+  }
+}
