@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicketClub Discord Watcher</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>TicketClub Discord Watcher</h1>
+    
+    <div id="licenseSection" class="section">
+      <label for="userEmail">Email</label>
+      <input type="email" id="userEmail" placeholder="vas@email.sk">
+      
+      <label for="licenseKey">Licenčný kľúč</label>
+      <input type="text" id="licenseKey" placeholder="XXX-XXX-XXX">
+      
+      <button id="activateBtn">Aktivovať</button>
+      <p id="licenseMsg" class="msg"></p>
+    </div>
+    
+    <div id="settingsSection" class="section hidden">
+      <div class="status">
+        <span id="statusDot" class="status-dot active"></span>
+        <span id="statusText">Aktívny</span>
+      </div>
+      
+      <div class="controls">
+        <button id="startBtn" class="btn primary">Spustiť Watcher</button>
+        <button id="stopBtn" class="btn secondary hidden">Zastaviť Watcher</button>
+      </div>
+      
+      <div class="logs">
+        <h3>Log</h3>
+        <div id="statusLog" class="status-log"></div>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

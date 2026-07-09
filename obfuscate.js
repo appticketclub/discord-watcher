@@ -7,6 +7,10 @@ const filesToObfuscate = [
   'popup.js'
 ];
 
+// Create dist folder
+if (!fs.existsSync('dist')) fs.mkdirSync('dist');
+
+// Obfuscate files and write to dist
 filesToObfuscate.forEach(file => {
   const filePath = path.join(__dirname, file);
   if (fs.existsSync(filePath)) {
@@ -21,7 +25,13 @@ filesToObfuscate.forEach(file => {
       splitStrings: true,
       stringArrayThreshold: 0.75
     });
-    fs.writeFileSync(filePath, obfuscated.getObfuscatedCode());
+    fs.writeFileSync(path.join(__dirname, 'dist', file), obfuscated.getObfuscatedCode());
     console.log(`Obfuscated: ${file}`);
   }
 });
+
+// Copy static files
+fs.copyFileSync('manifest.json', 'dist/manifest.json');
+fs.copyFileSync('popup.html', 'dist/popup.html');
+fs.copyFileSync('popup.css', 'dist/popup.css');
+fs.cpSync('icons', 'dist/icons', { recursive: true });

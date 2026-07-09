@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html><body><script>
+[16, 48, 128].forEach((size, i) => {
+  setTimeout(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#080808";
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#34d399";
+    ctx.font = `bold ${size * 0.4}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("RB", size/2, size/2);
+    const a = document.createElement("a");
+    a.download = `icon${size}.png`;
+    a.href = c.toDataURL();
+    a.click();
+  }, i * 500);
+});
+</script></body></html>
