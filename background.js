@@ -1,4 +1,5 @@
 const SUPABASE_URL = "https://eoeiuohwxulkgppjaogk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZWl1b2h3eHVsa2dwcGphb2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTgzMDcsImV4cCI6MjA5NTc5NDMwN30.VqMaEwmxrDllKn_c5d6lqr5PF_RLp2w_j8gbMUGDiII";
 let supabaseKey = null;
 let isWatching = false;
 let watchInterval = null;
@@ -27,12 +28,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function checkAlerts() {
-  if (!supabaseKey) return;
+  const key = supabaseKey || SUPABASE_KEY;
+  if (!key) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?is_processed=eq.false&order=created_at.desc&limit=5`, {
       headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
+        "apikey": key,
+        "Authorization": `Bearer ${key}`,
       }
     });
     const alerts = await res.json();
@@ -43,8 +45,8 @@ async function checkAlerts() {
       await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?id=eq.${alert.id}`, {
         method: "PATCH",
         headers: {
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
+          "apikey": key,
+          "Authorization": `Bearer ${key}`,
           "Content-Type": "application/json",
           "Prefer": "return=minimal"
         },
