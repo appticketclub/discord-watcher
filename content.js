@@ -88,4 +88,32 @@
   } else {
     console.log("[Discord Watcher] Find Tickets button not found");
   }
+  
+  // Step 4: Handle "Important Information" popup if it appears
+  await sleep(2000);
+
+  const proceedBtn = Array.from(document.querySelectorAll("button")).find(
+    btn => btn.textContent.trim().toLowerCase().includes("proceed to buy")
+  );
+
+  if (proceedBtn) {
+    console.log("[Discord Watcher] Important Information popup detected");
+    
+    // Check and click checkbox if present
+    const checkbox = document.querySelector("input[type='checkbox']");
+    if (checkbox && !checkbox.checked) {
+      checkbox.click();
+      await sleep(500);
+    } else {
+      // Try clicking the custom checkbox span
+      const customCheckbox = document.querySelector(".indexstyles__CustomCheckbox-sc-ruvmzp-8");
+      if (customCheckbox) {
+        customCheckbox.closest("label")?.click() || customCheckbox.click();
+        await sleep(500);
+      }
+    }
+
+    proceedBtn.click();
+    console.log("[Discord Watcher] Clicked Proceed to Buy");
+  }
 })();
