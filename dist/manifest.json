@@ -16,6 +16,20 @@
     "https://app.ticketclub.vip/*",
     "https://eoeiuohwxulkgppjaogk.supabase.co/*"
   ],
+  "content_scripts": [{
+    "matches": [
+      "https://*.ticketmaster.com/*",
+      "https://*.ticketmaster.nl/*",
+      "https://*.ticketmaster.de/*",
+      "https://*.ticketmaster.be/*",
+      "https://*.ticketmaster.co.uk/*",
+      "https://*.ticketmaster.at/*",
+      "https://*.ticketmaster.cz/*",
+      "https://*.ticketmaster.sk/*"
+    ],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

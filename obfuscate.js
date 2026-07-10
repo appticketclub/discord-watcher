@@ -4,7 +4,8 @@ const path = require('path');
 
 const filesToObfuscate = [
   'background.js',
-  'popup.js'
+  'popup.js',
+  'content.js'
 ];
 
 // Create dist folder

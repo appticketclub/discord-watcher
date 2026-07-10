@@ -55,16 +55,25 @@ async function checkAlerts() {
 
       // Open link in new tab
       if (alert.event_url) {
+        // Save alert data for content script
+        await new Promise(resolve =>
+          chrome.storage.local.set({ pendingAlert: {
+            quantity: alert.quantity,
+            section: alert.section,
+            price_min: alert.price_min,
+            event_name: alert.event_name
+          }}, resolve)
+        );
+        
         chrome.tabs.create({ url: alert.event_url });
         
         // Show notification
-        chrome.notifications.create({
+        chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
           iconUrl: "icons/icon128.png",
           title: "🎟️ Nový Discord Alert!",
           message: alert.event_name ?? alert.event_url,
           priority: 2,
-          requireInteraction: true,
         });
       }
     }
