@@ -34,8 +34,15 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     try {
       const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}`);
       const text = await res.text();
-      if (text.startsWith("VALID")) showActivated(data.isWatching, data.watcherStartTime);
-    } catch {}
+      if (text.startsWith("VALID")) {
+        showActivated(data.isWatching, data.watcherStartTime);
+      }
+    } catch {
+      // If verify fails, still show UI based on stored state
+      if (data.isWatching !== undefined) {
+        showActivated(data.isWatching, data.watcherStartTime);
+      }
+    }
   }
   // Load filters
   if (data.filters) {
@@ -45,12 +52,10 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     els.maxPrice.value = data.filters.maxPrice || 500;
   }
   // Load channels
-  if (data.channels) {
-    ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
-      const el = document.getElementById(`ch_${ch}`);
-      if (el) el.checked = data.channels[ch] !== false;
-    });
-  }
+  ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
+    const el = document.getElementById(`ch_${ch}`);
+    if (el) el.checked = !data.channels || data.channels[ch] !== false;
+  });
 });
 
 // Activate button
@@ -160,9 +165,7 @@ function startTimer(startMs) {
 function showActivated(isWatching, startTimeMs) {
   els.licenseSection.classList.add("hidden");
   els.settingsSection.classList.remove("hidden");
-  els.statusDot.className = "status-dot active";
-  els.statusText.textContent = "Aktívny";
-  if (isWatching) setWatcherUI(true, startTimeMs);
+  setWatcherUI(isWatching, startTimeMs);
 }
 
 function addLog(text, level = "") {
