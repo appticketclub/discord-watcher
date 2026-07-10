@@ -5,7 +5,7 @@ let isWatching = false;
 let watchInterval = null;
 
 let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500 };
-let channels = { NL: true, DE: true, ES: true, WORLD: true };
+let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
 // Load saved filters on startup
 chrome.storage.local.get(["filters", "channels"], (data) => {

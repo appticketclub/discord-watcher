@@ -46,7 +46,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
   }
   // Load channels
   if (data.channels) {
-    ["NL","DE","ES","WORLD"].forEach(ch => {
+    ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
       const el = document.getElementById(`ch_${ch}`);
       if (el) el.checked = data.channels[ch] !== false;
     });
@@ -115,7 +115,7 @@ els.saveSettingsBtn.addEventListener("click", () => {
     maxPrice: parseFloat(els.maxPrice.value) || 500,
   };
   const channels = {};
-  ["NL","DE","ES","WORLD"].forEach(ch => {
+  ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
     channels[ch] = document.getElementById(`ch_${ch}`).checked;
   });
   chrome.storage.local.set({ filters, channels });
