@@ -84,36 +84,79 @@
   const findBtn = document.querySelector("[data-testid='findTicketsBtn']");
   if (findBtn) {
     findBtn.click();
-    console.log("[Discord Watcher] Clicked Find Tickets");
+    console.log("[Discord Watcher] Clicked Find Tickets, starting refresh loop...");
   } else {
     console.log("[Discord Watcher] Find Tickets button not found");
   }
   
-  // Step 4: Handle "Important Information" popup if it appears
+  // Step 4 + 5: Handle popups and refresh loop
   await sleep(2000);
 
-  const proceedBtn = Array.from(document.querySelectorAll("button")).find(
-    btn => btn.textContent.trim().toLowerCase().includes("proceed to buy")
-  );
+  let loopCount = 0;
+  const MAX_LOOPS = 999;
 
-  if (proceedBtn) {
-    console.log("[Discord Watcher] Important Information popup detected");
-    
-    // Check and click checkbox if present
-    const checkbox = document.querySelector("input[type='checkbox']");
-    if (checkbox && !checkbox.checked) {
-      checkbox.click();
-      await sleep(500);
-    } else {
-      // Try clicking the custom checkbox span
+  while (loopCount < MAX_LOOPS && isRunning()) {
+    loopCount++;
+
+    // Check checkout - success!
+    if (window.location.href.includes("checkout")) {
+      console.log("[Discord Watcher] 🎟️ SUCCESS - Checkout detected!");
+      break;
+    }
+
+    // Handle Important Information popup
+    const proceedBtn = Array.from(document.querySelectorAll("button")).find(
+      btn => btn.textContent.trim().toLowerCase().includes("proceed to buy")
+    );
+    if (proceedBtn) {
       const customCheckbox = document.querySelector(".indexstyles__CustomCheckbox-sc-ruvmzp-8");
       if (customCheckbox) {
         customCheckbox.closest("label")?.click() || customCheckbox.click();
         await sleep(500);
       }
+      proceedBtn.click();
+      console.log("[Discord Watcher] Clicked Proceed to Buy");
+      await sleep(2000);
+      continue;
     }
 
-    proceedBtn.click();
-    console.log("[Discord Watcher] Clicked Proceed to Buy");
+    // Check Get Tickets button - success!
+    const getTicketsBtn = Array.from(document.querySelectorAll("button")).find(
+      btn => btn.textContent.trim() === "Get Tickets"
+    ) || document.querySelector("[data-bdd='offer-card-buy-button']");
+    
+    if (getTicketsBtn && getTicketsBtn.offsetParent !== null) {
+      console.log("[Discord Watcher] 🎟️ Get Tickets found! Clicking...");
+      getTicketsBtn.click();
+      await sleep(3000);
+      continue;
+    }
+
+    // Click Search Again if available
+    const searchAgainBtn = Array.from(document.querySelectorAll("button")).find(
+      btn => btn.textContent.trim() === "Search Again"
+    );
+    if (searchAgainBtn) {
+      searchAgainBtn.click();
+      console.log(`[Discord Watcher] Cycle ${loopCount} - Search Again clicked`);
+      await sleep(2000);
+      continue;
+    }
+
+    // Click Find Tickets again
+    const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
+    if (findTicketsBtn) {
+      findTicketsBtn.click();
+      console.log(`[Discord Watcher] Cycle ${loopCount} - Find Tickets clicked`);
+      await sleep(2000);
+      continue;
+    }
+
+    await sleep(1000);
+  }
+
+  function isRunning() {
+    // Check if tab is still active
+    return document.visibilityState !== undefined;
   }
 })();
