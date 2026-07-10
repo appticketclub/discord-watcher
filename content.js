@@ -109,11 +109,27 @@
       btn => btn.textContent.trim().toLowerCase().includes("proceed to buy")
     );
     if (proceedBtn) {
-      const customCheckbox = document.querySelector(".indexstyles__CustomCheckbox-sc-ruvmzp-8");
-      if (customCheckbox) {
-        customCheckbox.closest("label")?.click() || customCheckbox.click();
-        await sleep(500);
+      // Try multiple checkbox selectors
+      const checkboxSelectors = [
+        "input[type='checkbox']",
+        "[role='checkbox']",
+        "label input",
+        "label span[class*='Checkbox']",
+        "label span[class*='checkbox']",
+      ];
+      
+      for (const selector of checkboxSelectors) {
+        const el = document.querySelector(selector);
+        if (el) {
+          const label = el.closest("label") || el.parentElement;
+          if (label) label.click();
+          else el.click();
+          await sleep(500);
+          break;
+        }
       }
+      
+      await sleep(300);
       proceedBtn.click();
       console.log("[Discord Watcher] Clicked Proceed to Buy");
       await sleep(2000);
