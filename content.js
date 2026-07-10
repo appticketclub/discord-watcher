@@ -1,4 +1,13 @@
 (async function() {
+  let _watcherStopped = false;
+
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === "STOP_CONTENT") {
+      _watcherStopped = true;
+      console.log("[Discord Watcher] Stop signal received");
+    }
+  });
+
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -95,6 +104,13 @@
   let loopCount = 0;
   const MAX_LOOPS = 999;
 
+  // Get interval from storage
+  const intervalData = await new Promise(resolve =>
+    chrome.storage.local.get(["intervalMin", "intervalMax"], resolve)
+  );
+  const minMs = (intervalData.intervalMin || 5) * 1000;
+  const maxMs = (intervalData.intervalMax || 12) * 1000;
+
   while (loopCount < MAX_LOOPS && isRunning()) {
     loopCount++;
 
@@ -155,7 +171,8 @@
     if (searchAgainBtn) {
       searchAgainBtn.click();
       console.log(`[Discord Watcher] Cycle ${loopCount} - Search Again clicked`);
-      await sleep(2000);
+      const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+      await sleep(waitMs);
       continue;
     }
 
@@ -164,15 +181,16 @@
     if (findTicketsBtn) {
       findTicketsBtn.click();
       console.log(`[Discord Watcher] Cycle ${loopCount} - Find Tickets clicked`);
-      await sleep(2000);
+      const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+      await sleep(waitMs);
       continue;
     }
 
-    await sleep(1000);
+    const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    await sleep(waitMs);
   }
 
   function isRunning() {
-    // Check if tab is still active
-    return document.visibilityState !== undefined;
+    return !_watcherStopped;
   }
 })();

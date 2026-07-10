@@ -21,6 +21,8 @@ const els = {
   whitelist: document.getElementById("whitelist"),
   minTickets: document.getElementById("minTickets"),
   maxPrice: document.getElementById("maxPrice"),
+  intervalMin: document.getElementById("intervalMin"),
+  intervalMax: document.getElementById("intervalMax"),
 };
 
 let timerInterval = null;
@@ -50,6 +52,8 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     els.whitelist.value = data.filters.whitelist || "";
     els.minTickets.value = data.filters.minTickets || 1;
     els.maxPrice.value = data.filters.maxPrice || 500;
+    els.intervalMin.value = data.filters.intervalMin || 5;
+    els.intervalMax.value = data.filters.intervalMax || 12;
   }
   // Load channels
   ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
@@ -118,6 +122,8 @@ els.saveSettingsBtn.addEventListener("click", () => {
     whitelist: els.whitelist.value.trim(),
     minTickets: parseInt(els.minTickets.value) || 1,
     maxPrice: parseFloat(els.maxPrice.value) || 500,
+    intervalMin: parseInt(els.intervalMin.value) || 5,
+    intervalMax: parseInt(els.intervalMax.value) || 12,
   };
   const channels = {};
   ["NL","DE","ES","WORLD","TEST"].forEach(ch => {

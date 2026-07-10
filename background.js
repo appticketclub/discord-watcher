@@ -4,7 +4,7 @@ let supabaseKey = null;
 let isWatching = false;
 let watchInterval = null;
 
-let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500 };
+let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12 };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
 // Load saved filters on startup
@@ -26,6 +26,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     isWatching = false;
     if (watchInterval) clearInterval(watchInterval);
     chrome.storage.local.set({ isWatching: false });
+    
+    // Stop content script in active tabs
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { type: "STOP_CONTENT" }).catch(() => {});
+      });
+    });
+    
     sendResponse({ ok: true });
   }
 
