@@ -1,43 +1,92 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TicketClub Discord Watcher</title>
   <link rel="stylesheet" href="popup.css">
+  <title>TicketClub Discord Watcher</title>
 </head>
 <body>
-  <div class="container">
-    <h1>TicketClub Discord Watcher</h1>
-    
-    <div id="licenseSection" class="section">
-      <label for="userEmail">Email</label>
-      <input type="email" id="userEmail" placeholder="vas@email.sk">
-      
-      <label for="licenseKey">Licenčný kľúč</label>
-      <input type="text" id="licenseKey" placeholder="XXX-XXX-XXX">
-      
-      <button id="activateBtn">Aktivovať</button>
-      <p id="licenseMsg" class="msg"></p>
+  <!-- License section -->
+  <div id="licenseSection">
+    <div class="header">
+      <h1>TicketClub Discord Watcher</h1>
     </div>
-    
-    <div id="settingsSection" class="section hidden">
-      <div class="status">
-        <span id="statusDot" class="status-dot active"></span>
-        <span id="statusText">Aktívny</span>
-      </div>
-      
-      <div class="controls">
-        <button id="startBtn" class="btn primary">Spustiť Watcher</button>
-        <button id="stopBtn" class="btn secondary hidden">Zastaviť Watcher</button>
-      </div>
-      
-      <div class="logs">
-        <h3>Log</h3>
-        <div id="statusLog" class="status-log"></div>
-      </div>
+    <div class="section">
+      <label class="label">EMAIL</label>
+      <input id="userEmail" type="email" placeholder="Email z app.ticketclub.vip" class="input">
+      <label class="label">LICENČNÍ KLÍČ</label>
+      <input id="licenseKey" type="text" placeholder="TC-XXXX-XXXX-XXXX" class="input">
+      <div id="licenseMsg" class="msg"></div>
+      <button id="activateBtn" class="btn-primary">Aktivovat</button>
     </div>
   </div>
+
+  <!-- Main section -->
+  <div id="settingsSection" class="hidden">
+    <div class="header">
+      <div class="header-left">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText">Neaktívny</span>
+      </div>
+      <button id="settingsBtn" class="icon-btn" title="Nastavenia">⚙️</button>
+    </div>
+
+    <!-- Timer -->
+    <div id="timerBar" class="timer-bar hidden">
+      <span>Beží: </span><span id="timerText">00:00:00</span>
+    </div>
+
+    <!-- Main button -->
+    <button id="toggleBtn" class="btn-primary">▶ Spustiť Watcher</button>
+
+    <!-- Log -->
+    <div class="label" style="margin-top:12px">LOG</div>
+    <div id="statusLog" class="log"></div>
+  </div>
+
+  <!-- Settings panel -->
+  <div id="settingsPanel" class="hidden">
+    <div class="header">
+      <button id="backBtn" class="icon-btn">← Späť</button>
+      <h2>Nastavenia</h2>
+    </div>
+
+    <!-- Channels -->
+    <div class="section">
+      <div class="label">KANÁLY</div>
+      <div class="filter-row"><span>NL</span><input type="checkbox" id="ch_NL" checked></div>
+      <div class="filter-row"><span>DE</span><input type="checkbox" id="ch_DE" checked></div>
+      <div class="filter-row"><span>ES</span><input type="checkbox" id="ch_ES" checked></div>
+      <div class="filter-row"><span>WORLD</span><input type="checkbox" id="ch_WORLD" checked></div>
+    </div>
+
+    <!-- Blacklist -->
+    <div class="section">
+      <div class="label">BLACKLIST (ignoruj tieto akcie)</div>
+      <textarea id="blacklist" placeholder="Bruno Mars&#10;Justin Bieber&#10;(každý na nový riadok)" class="textarea"></textarea>
+    </div>
+
+    <!-- Whitelist -->
+    <div class="section">
+      <div class="label">WHITELIST (len tieto akcie, prázdne = všetky)</div>
+      <textarea id="whitelist" placeholder="Coldplay&#10;Taylor Swift&#10;(každý na nový riadok)" class="textarea"></textarea>
+    </div>
+
+    <!-- Min tickets / Max price -->
+    <div class="section">
+      <div class="filter-row">
+        <span>Min. lístkov</span>
+        <input type="number" id="minTickets" value="1" min="1" max="10" class="input-small">
+      </div>
+      <div class="filter-row">
+        <span>Max. cena (€)</span>
+        <input type="number" id="maxPrice" value="500" class="input-small">
+      </div>
+    </div>
+
+    <button id="saveSettingsBtn" class="btn-primary">Uložiť nastavenia</button>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

@@ -4,6 +4,15 @@ let supabaseKey = null;
 let isWatching = false;
 let watchInterval = null;
 
+let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500 };
+let channels = { NL: true, DE: true, ES: true, WORLD: true };
+
+// Load saved filters on startup
+chrome.storage.local.get(["filters", "channels"], (data) => {
+  if (data.filters) filters = data.filters;
+  if (data.channels) channels = data.channels;
+});
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "START_WATCHING") {
     supabaseKey = msg.supabaseKey;
@@ -24,14 +33,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ isWatching });
   }
 
+  if (msg.type === "UPDATE_FILTERS") {
+    filters = msg.filters;
+    channels = msg.channels;
+    chrome.storage.local.set({ filters, channels });
+    sendResponse({ ok: true });
+  }
+
   return true;
 });
 
 async function checkAlerts() {
   const key = supabaseKey || SUPABASE_KEY;
-  if (!key) return;
+  if (!key || !isWatching) return;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?is_processed=eq.false&order=created_at.desc&limit=5`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?is_processed=eq.false&order=created_at.desc&limit=10`, {
       headers: {
         "apikey": key,
         "Authorization": `Bearer ${key}`,
@@ -41,7 +57,7 @@ async function checkAlerts() {
     if (!alerts || alerts.length === 0) return;
 
     for (const alert of alerts) {
-      // Mark as processed
+      // Mark as processed first
       await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?id=eq.${alert.id}`, {
         method: "PATCH",
         headers: {
@@ -53,21 +69,55 @@ async function checkAlerts() {
         body: JSON.stringify({ is_processed: true })
       });
 
-      // Open link in new tab
+      // Check channel filter
+      if (alert.channel_name && !channels[alert.channel_name]) {
+        chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (kanál)" });
+        continue;
+      }
+
+      // Check whitelist
+      if (filters.whitelist) {
+        const whitelist = filters.whitelist.split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
+        if (whitelist.length > 0) {
+          const name = (alert.event_name || "").toLowerCase();
+          if (!whitelist.some(w => name.includes(w))) {
+            chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (whitelist)" });
+            continue;
+          }
+        }
+      }
+
+      // Check blacklist
+      if (filters.blacklist) {
+        const blacklist = filters.blacklist.split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
+        const name = (alert.event_name || "").toLowerCase();
+        if (blacklist.some(b => name.includes(b))) {
+          chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (blacklist)" });
+          continue;
+        }
+      }
+
+      // Check min tickets
+      if (alert.quantity && alert.quantity < filters.minTickets) {
+        chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (málo lístkov)" });
+        continue;
+      }
+
+      // Check max price
+      if (alert.price_min && alert.price_min > filters.maxPrice) {
+        chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (vysoká cena)" });
+        continue;
+      }
+
+      // All filters passed - open tab
       if (alert.event_url) {
-        // Save alert data for content script
-        await new Promise(resolve =>
-          chrome.storage.local.set({ pendingAlert: {
-            quantity: alert.quantity,
-            section: alert.section,
-            price_min: alert.price_min,
-            event_name: alert.event_name
-          }}, resolve)
-        );
-        
+        await chrome.storage.local.set({ pendingAlert: {
+          quantity: alert.quantity,
+          section: alert.section,
+          price_min: alert.price_min,
+          event_name: alert.event_name
+        }});
         chrome.tabs.create({ url: alert.event_url });
-        
-        // Show notification
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
           iconUrl: "icons/icon128.png",
@@ -75,10 +125,11 @@ async function checkAlerts() {
           message: alert.event_name ?? alert.event_url,
           priority: 2,
         });
+        chrome.runtime.sendMessage({ type: "ALERT_OPENED", event_name: alert.event_name, url: alert.event_url });
       }
     }
   } catch(e) {
-    console.error("[Discord Watcher]", e);
+    console.error("[Discord Watcher] Error:", e);
   }
 }
 

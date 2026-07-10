@@ -1,4 +1,4 @@
-const SUPABASE_URL = "https://eoeiuohwxulkgppjaogk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZWl1b2h3eHVsa2dwcGphb2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTgzMDcsImV4cCI6MjA5NTc5NDMwN30.VqMaEwmxrDllKn_c5d6lqr5PF_RLp2w_j8gbMUGDiII";
 
 const els = {
   licenseKey: document.getElementById("licenseKey"),
@@ -7,90 +7,162 @@ const els = {
   licenseMsg: document.getElementById("licenseMsg"),
   licenseSection: document.getElementById("licenseSection"),
   settingsSection: document.getElementById("settingsSection"),
+  settingsPanel: document.getElementById("settingsPanel"),
+  settingsBtn: document.getElementById("settingsBtn"),
+  backBtn: document.getElementById("backBtn"),
+  saveSettingsBtn: document.getElementById("saveSettingsBtn"),
   statusDot: document.getElementById("statusDot"),
   statusText: document.getElementById("statusText"),
-  startBtn: document.getElementById("startBtn"),
-  stopBtn: document.getElementById("stopBtn"),
+  toggleBtn: document.getElementById("toggleBtn"),
+  timerBar: document.getElementById("timerBar"),
+  timerText: document.getElementById("timerText"),
   statusLog: document.getElementById("statusLog"),
+  blacklist: document.getElementById("blacklist"),
+  whitelist: document.getElementById("whitelist"),
+  minTickets: document.getElementById("minTickets"),
+  maxPrice: document.getElementById("maxPrice"),
 };
 
-chrome.storage.local.get(["licenseKey", "userEmail", "isWatching"], async (data) => {
+let timerInterval = null;
+let startTime = null;
+
+// Load saved data
+chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStartTime", "filters", "channels"], async (data) => {
   if (data.userEmail) els.userEmail.value = data.userEmail;
   if (data.licenseKey) {
     els.licenseKey.value = data.licenseKey;
     try {
       const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}`);
       const text = await res.text();
-      if (text.startsWith("VALID")) showActivated(data.isWatching);
+      if (text.startsWith("VALID")) showActivated(data.isWatching, data.watcherStartTime);
     } catch {}
+  }
+  // Load filters
+  if (data.filters) {
+    els.blacklist.value = data.filters.blacklist || "";
+    els.whitelist.value = data.filters.whitelist || "";
+    els.minTickets.value = data.filters.minTickets || 1;
+    els.maxPrice.value = data.filters.maxPrice || 500;
+  }
+  // Load channels
+  if (data.channels) {
+    ["NL","DE","ES","WORLD"].forEach(ch => {
+      const el = document.getElementById(`ch_${ch}`);
+      if (el) el.checked = data.channels[ch] !== false;
+    });
   }
 });
 
+// Activate button
 els.activateBtn.addEventListener("click", async () => {
   const key = els.licenseKey.value.trim();
   const email = els.userEmail.value.trim();
-  if (!key || !email) {
-    els.licenseMsg.textContent = "Zadejte email a klíč";
-    els.licenseMsg.style.color = "#f87171";
-    return;
-  }
-  els.licenseMsg.textContent = "Ověřuji...";
-  els.licenseMsg.style.color = "#a0a0a0";
+  if (!key || !email) { els.licenseMsg.textContent = "Zadejte email a klíč"; els.licenseMsg.style.color = "#f87171"; return; }
+  els.licenseMsg.textContent = "Ověřuji..."; els.licenseMsg.style.color = "#a0a0a0";
   try {
     await chrome.storage.local.remove(["profileId"]);
     const profileId = "profile_" + Math.random().toString(36).substr(2, 16) + "_" + Date.now();
     await chrome.storage.local.set({ profileId });
     const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(key)}&email=${encodeURIComponent(email)}&profileId=${encodeURIComponent(profileId)}&forceActivate=true`);
-    const text = await res.text().then(t => t.trim());
+    const text = (await res.text()).trim();
     if (text.startsWith("VALID")) {
       await chrome.storage.local.set({ licenseKey: key, userEmail: email });
-      els.licenseMsg.textContent = "✓ Licencia platná";
-      els.licenseMsg.style.color = "#34d399";
-      showActivated(false);
+      els.licenseMsg.textContent = "✓ Licencia platná"; els.licenseMsg.style.color = "#34d399";
+      showActivated(false, null);
     } else {
-      els.licenseMsg.textContent = "✗ Neplatný kľúč";
-      els.licenseMsg.style.color = "#f87171";
+      els.licenseMsg.textContent = "✗ Neplatný kľúč"; els.licenseMsg.style.color = "#f87171";
     }
-  } catch {
-    els.licenseMsg.textContent = "✗ Chyba pripojenia";
-    els.licenseMsg.style.color = "#f87171";
+  } catch { els.licenseMsg.textContent = "✗ Chyba pripojenia"; els.licenseMsg.style.color = "#f87171"; }
+});
+
+// Toggle watcher
+els.toggleBtn.addEventListener("click", async () => {
+  const data = await new Promise(resolve => chrome.storage.local.get(["isWatching"], resolve));
+  if (data.isWatching) {
+    // Stop
+    chrome.runtime.sendMessage({ type: "STOP_WATCHING" }, () => {
+      chrome.storage.local.remove(["watcherStartTime"]);
+      setWatcherUI(false);
+      addLog("Watcher zastavený.", "error");
+    });
+  } else {
+    // Start
+    const now = Date.now();
+    chrome.runtime.sendMessage({ type: "START_WATCHING", supabaseKey: SUPABASE_KEY }, () => {
+      chrome.storage.local.set({ watcherStartTime: now });
+      setWatcherUI(true, now);
+      addLog("Watcher spustený!", "success");
+    });
   }
 });
 
-els.startBtn.addEventListener("click", async () => {
-  const data = await new Promise(resolve => chrome.storage.local.get(["licenseKey"], resolve));
-  // Use anon key for Supabase
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZWl1b2h3eHVsa2dwcGphb2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTgzMDcsImV4cCI6MjA5NTc5NDMwN30.VqMaEwmxrDllKn_c5d6lqr5PF_RLp2w_j8gbMUGDiII";
-  chrome.runtime.sendMessage({ type: "START_WATCHING", supabaseKey }, () => {
-    els.startBtn.classList.add("hidden");
-    els.stopBtn.classList.remove("hidden");
+// Settings
+els.settingsBtn.addEventListener("click", () => {
+  els.settingsSection.classList.add("hidden");
+  els.settingsPanel.classList.remove("hidden");
+});
+
+els.backBtn.addEventListener("click", () => {
+  els.settingsPanel.classList.add("hidden");
+  els.settingsSection.classList.remove("hidden");
+});
+
+els.saveSettingsBtn.addEventListener("click", () => {
+  const filters = {
+    blacklist: els.blacklist.value.trim(),
+    whitelist: els.whitelist.value.trim(),
+    minTickets: parseInt(els.minTickets.value) || 1,
+    maxPrice: parseFloat(els.maxPrice.value) || 500,
+  };
+  const channels = {};
+  ["NL","DE","ES","WORLD"].forEach(ch => {
+    channels[ch] = document.getElementById(`ch_${ch}`).checked;
+  });
+  chrome.storage.local.set({ filters, channels });
+  chrome.runtime.sendMessage({ type: "UPDATE_FILTERS", filters, channels });
+  els.settingsPanel.classList.add("hidden");
+  els.settingsSection.classList.remove("hidden");
+  addLog("Nastavenia uložené ✓", "success");
+});
+
+function setWatcherUI(running, startTimeMs) {
+  if (running) {
+    els.toggleBtn.textContent = "⏹ Zastaviť Watcher";
+    els.toggleBtn.classList.add("stop");
     els.statusDot.className = "status-dot running";
     els.statusText.textContent = "Sleduje alerty...";
-    addLog("Watcher spustený!", "success");
-  });
-});
-
-els.stopBtn.addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "STOP_WATCHING" }, () => {
-    els.startBtn.classList.remove("hidden");
-    els.stopBtn.classList.add("hidden");
+    els.timerBar.classList.remove("hidden");
+    startTimer(startTimeMs || Date.now());
+  } else {
+    els.toggleBtn.textContent = "▶ Spustiť Watcher";
+    els.toggleBtn.classList.remove("stop");
     els.statusDot.className = "status-dot active";
     els.statusText.textContent = "Aktívny";
-    addLog("Watcher zastavený.", "error");
-  });
-});
+    els.timerBar.classList.add("hidden");
+    if (timerInterval) clearInterval(timerInterval);
+  }
+}
 
-function showActivated(isWatching) {
+function startTimer(startMs) {
+  if (timerInterval) clearInterval(timerInterval);
+  startTime = startMs;
+  function update() {
+    const diff = Date.now() - startTime;
+    const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
+    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
+    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
+    els.timerText.textContent = `${h}:${m}:${s}`;
+  }
+  update();
+  timerInterval = setInterval(update, 1000);
+}
+
+function showActivated(isWatching, startTimeMs) {
   els.licenseSection.classList.add("hidden");
   els.settingsSection.classList.remove("hidden");
   els.statusDot.className = "status-dot active";
   els.statusText.textContent = "Aktívny";
-  if (isWatching) {
-    els.startBtn.classList.add("hidden");
-    els.stopBtn.classList.remove("hidden");
-    els.statusDot.className = "status-dot running";
-    els.statusText.textContent = "Sleduje alerty...";
-  }
+  if (isWatching) setWatcherUI(true, startTimeMs);
 }
 
 function addLog(text, level = "") {
@@ -98,5 +170,11 @@ function addLog(text, level = "") {
   entry.className = `log-entry ${level}`;
   entry.textContent = `[${new Date().toLocaleTimeString("cs-CZ")}] ${text}`;
   els.statusLog.insertBefore(entry, els.statusLog.firstChild);
-  if (els.statusLog.children.length > 30) els.statusLog.removeChild(els.statusLog.lastChild);
+  if (els.statusLog.children.length > 50) els.statusLog.removeChild(els.statusLog.lastChild);
 }
+
+// Listen for messages from background
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "ALERT_OPENED") addLog(`🎟️ Otvorený: ${msg.event_name || msg.url}`, "success");
+  if (msg.type === "ALERT_FILTERED") addLog(`🚫 Filtrovaný: ${msg.event_name}`, "info");
+});
