@@ -13,6 +13,7 @@
     "https://*.ticketmaster.be/*",
     "https://*.ticketmaster.nl/*",
     "https://*.ticketmaster.at/*",
+    "https://*.ticketmaster.es/*",
     "https://app.ticketclub.vip/*",
     "https://eoeiuohwxulkgppjaogk.supabase.co/*"
   ],
@@ -25,7 +26,8 @@
       "https://*.ticketmaster.co.uk/*",
       "https://*.ticketmaster.at/*",
       "https://*.ticketmaster.cz/*",
-      "https://*.ticketmaster.sk/*"
+      "https://*.ticketmaster.sk/*",
+      "https://*.ticketmaster.es/*"
     ],
     "js": ["content.js"],
     "run_at": "document_idle"
