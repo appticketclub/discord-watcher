@@ -7,14 +7,30 @@ let watchInterval = null;
 let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12 };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
-// Keep-alive alarm
-chrome.alarms.create("keepAlive", { periodInMinutes: 0.4 });
+// Create keep-alive alarm on install
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create("keepAlive", { periodInMinutes: 0.5 });
+  console.log("[Discord Watcher] Keep-alive alarm created");
+});
+
+// Also create on startup in case it was lost
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.create("keepAlive", { periodInMinutes: 0.5 });
+});
+
+// Recreate alarm if it doesn't exist
+chrome.alarms.get("keepAlive", (alarm) => {
+  if (!alarm) {
+    chrome.alarms.create("keepAlive", { periodInMinutes: 0.5 });
+  }
+});
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepAlive") {
+    console.log("[Discord Watcher] Keep-alive tick - checking alerts...");
     chrome.storage.local.get(["isWatching", "supabaseKey"], (data) => {
-      if (data.isWatching && data.supabaseKey) {
-        supabaseKey = data.supabaseKey;
+      if (data.isWatching) {
+        supabaseKey = data.supabaseKey || SUPABASE_KEY;
         isWatching = true;
         checkAlerts();
       }
