@@ -7,6 +7,21 @@ let watchInterval = null;
 let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12 };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
+// Keep-alive alarm
+chrome.alarms.create("keepAlive", { periodInMinutes: 0.4 });
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "keepAlive") {
+    chrome.storage.local.get(["isWatching", "supabaseKey"], (data) => {
+      if (data.isWatching && data.supabaseKey) {
+        supabaseKey = data.supabaseKey;
+        isWatching = true;
+        checkAlerts();
+      }
+    });
+  }
+});
+
 // Load saved filters on startup
 chrome.storage.local.get(["filters", "channels"], (data) => {
   if (data.filters) filters = data.filters;

@@ -3,7 +3,7 @@
   "name": "TicketClub Discord Watcher",
   "version": "1.0.0",
   "description": "Automaticky otvára Ticketmaster linky z Discord alertov",
-  "permissions": ["activeTab", "storage", "notifications", "scripting", "tabs"],
+  "permissions": ["activeTab", "storage", "notifications", "scripting", "tabs", "alarms"],
   "host_permissions": [
     "https://*.ticketmaster.com/*",
     "https://*.ticketmaster.cz/*",
