@@ -186,4 +186,5 @@ function addLog(text, level = "") {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "ALERT_OPENED") addLog(`🎟️ Otvorený: ${msg.event_name || msg.url}`, "success");
   if (msg.type === "ALERT_FILTERED") addLog(`🚫 Filtrovaný: ${msg.event_name}`, "info");
+  if (msg.type === "CONTENT_LOG") addLog(msg.text, msg.level || "info");
 });

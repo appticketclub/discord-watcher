@@ -77,9 +77,9 @@
     const plusBtn = targetStepper.querySelector("button:last-child");
     if (plusBtn) {
       for (let i = 0; i < quantity; i++) {
-        plusBtn.click();
-        await sleep(400);
-      }
+      plusBtn.click();
+      await sleep(400);
+    }
       console.log(`[Discord Watcher] Clicked + ${quantity} times`);
     } else {
       console.log("[Discord Watcher] Plus button not found");
@@ -104,13 +104,6 @@
   let loopCount = 0;
   const MAX_LOOPS = 999;
 
-  // Get interval from storage
-  const intervalData = await new Promise(resolve =>
-    chrome.storage.local.get(["intervalMin", "intervalMax"], resolve)
-  );
-  const minMs = (intervalData.intervalMin || 5) * 1000;
-  const maxMs = (intervalData.intervalMax || 12) * 1000;
-
   while (loopCount < MAX_LOOPS && isRunning()) {
     loopCount++;
 
@@ -125,26 +118,16 @@
       btn => btn.textContent.trim().toLowerCase().includes("proceed to buy")
     );
     if (proceedBtn) {
-      // Try multiple checkbox selectors
-      const checkboxSelectors = [
-        "input[type='checkbox']",
-        "[role='checkbox']",
-        "label input",
-        "label span[class*='Checkbox']",
-        "label span[class*='checkbox']",
-      ];
-      
+      const checkboxSelectors = ["input[type='checkbox']", "[role='checkbox']", "label input", "label span[class*='Checkbox']"];
       for (const selector of checkboxSelectors) {
         const el = document.querySelector(selector);
         if (el) {
           const label = el.closest("label") || el.parentElement;
-          if (label) label.click();
-          else el.click();
+          if (label) label.click(); else el.click();
           await sleep(500);
           break;
         }
       }
-      
       await sleep(300);
       proceedBtn.click();
       console.log("[Discord Watcher] Clicked Proceed to Buy");
@@ -164,29 +147,40 @@
       continue;
     }
 
-    // Click Search Again if available
+    // Get interval
+    const intervalData = await new Promise(resolve =>
+      chrome.storage.local.get(["intervalMin", "intervalMax"], resolve)
+    );
+    const minMs = (intervalData.intervalMin || 5) * 1000;
+    const maxMs = (intervalData.intervalMax || 12) * 1000;
+    const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    const waitSec = Math.round(waitMs / 1000);
+
+    // Click Search Again or Find Tickets
     const searchAgainBtn = Array.from(document.querySelectorAll("button")).find(
       btn => btn.textContent.trim() === "Search Again"
     );
     if (searchAgainBtn) {
       searchAgainBtn.click();
-      console.log(`[Discord Watcher] Cycle ${loopCount} - Search Again clicked`);
-      const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-      await sleep(waitMs);
-      continue;
+      console.log(`[Discord Watcher] Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`);
+      chrome.runtime.sendMessage({
+        type: "CONTENT_LOG",
+        text: `Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`,
+        level: "info"
+      }).catch(() => {});
+    } else {
+      const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
+      if (findTicketsBtn) {
+        findTicketsBtn.click();
+        console.log(`[Discord Watcher] Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`);
+        chrome.runtime.sendMessage({
+          type: "CONTENT_LOG",
+          text: `Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`,
+          level: "info"
+        }).catch(() => {});
+      }
     }
 
-    // Click Find Tickets again
-    const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
-    if (findTicketsBtn) {
-      findTicketsBtn.click();
-      console.log(`[Discord Watcher] Cycle ${loopCount} - Find Tickets clicked`);
-      const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-      await sleep(waitMs);
-      continue;
-    }
-
-    const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
     await sleep(waitMs);
   }
 
