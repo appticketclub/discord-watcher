@@ -60,6 +60,19 @@
   console.log("[Discord Watcher] Auto selecting tickets:", alert);
   chrome.storage.local.remove(["pendingAlert"]);
 
+  // Step 0: Check for Queue and join if present
+  const joinQueueBtn = document.querySelector("[data-bdd='lobby-card-CTAButton']") ||
+    Array.from(document.querySelectorAll("button")).find(
+      btn => btn.textContent.trim().toLowerCase().includes("join the queue")
+    );
+
+  if (joinQueueBtn) {
+    joinQueueBtn.click();
+    console.log("[Discord Watcher] Joined the queue!");
+    // Wait for queue to finish and redirect to ticket selection
+    await sleep(3000);
+  }
+
   // Step 1: Wait for page and click "See best available"
   const bestAvailableBtn = await waitForButton("see best available", 8000);
   if (bestAvailableBtn) {
@@ -145,6 +158,17 @@
         }, 400);
       } catch(e) {}
       break;
+    }
+
+    // Check if we're in queue - wait
+    const inQueue = document.querySelector("[data-bdd='lobby-card-CTAButton']") ||
+      Array.from(document.querySelectorAll("button")).find(
+        btn => btn.textContent.trim().toLowerCase().includes("join the queue")
+      );
+    if (inQueue) {
+      console.log("[Discord Watcher] In queue, waiting...");
+      await sleep(5000);
+      continue;
     }
 
     // Handle Important Information popup
