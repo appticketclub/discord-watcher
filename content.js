@@ -4,7 +4,6 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "STOP_CONTENT") {
       _watcherStopped = true;
-      console.log("[Discord Watcher] Stop signal received");
     }
   });
 
@@ -12,8 +11,41 @@
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // Wait a bit for background to save pendingAlert
-  await sleep(1500);
+  function waitForElement(selector, timeout = 5000) {
+    return new Promise((resolve) => {
+      const el = document.querySelector(selector);
+      if (el) return resolve(el);
+      const observer = new MutationObserver(() => {
+        const el = document.querySelector(selector);
+        if (el) { observer.disconnect(); resolve(el); }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(() => { observer.disconnect(); resolve(null); }, timeout);
+    });
+  }
+
+  function waitForButton(textMatch, timeout = 5000) {
+    return new Promise((resolve) => {
+      const check = () => {
+        const btn = Array.from(document.querySelectorAll("button")).find(
+          b => b.textContent.trim().toLowerCase().includes(textMatch.toLowerCase()) && b.offsetParent !== null
+        );
+        if (btn) return btn;
+        return null;
+      };
+      const found = check();
+      if (found) return resolve(found);
+      const observer = new MutationObserver(() => {
+        const btn = check();
+        if (btn) { observer.disconnect(); resolve(btn); }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(() => { observer.disconnect(); resolve(null); }, timeout);
+    });
+  }
+
+  // Wait for pendingAlert
+  await sleep(500);
 
   const alertData = await new Promise(resolve =>
     chrome.storage.local.get(["pendingAlert"], resolve)
@@ -26,25 +58,19 @@
 
   const alert = alertData.pendingAlert;
   console.log("[Discord Watcher] Auto selecting tickets:", alert);
-
   chrome.storage.local.remove(["pendingAlert"]);
 
-  // Wait for page to fully load
-  await sleep(3000);
-
-  // Step 1: Click "See best available" if not already active
-  const allButtons = Array.from(document.querySelectorAll("button"));
-  const bestAvailableBtn = allButtons.find(
-    btn => btn.textContent.trim().toLowerCase().includes("see best available") ||
-           btn.textContent.trim().toLowerCase().includes("best available")
-  );
+  // Step 1: Wait for page and click "See best available"
+  const bestAvailableBtn = await waitForButton("see best available", 8000);
   if (bestAvailableBtn) {
     bestAvailableBtn.click();
     console.log("[Discord Watcher] Clicked See best available");
-    await sleep(2000);
   }
 
-  // Step 2: Find category and click +
+  // Step 2: Wait for steppers and click +
+  await waitForElement("[data-testid='quantityStepper']", 5000);
+  await sleep(300);
+
   const quantity = alert.quantity || 1;
   const categoryName = alert.section || null;
 
@@ -67,49 +93,57 @@
     }
   }
 
-  // Fallback — first stepper
   if (!targetStepper && steppers.length > 0) {
     targetStepper = steppers[0];
-    console.log("[Discord Watcher] Using first available category");
   }
 
   if (targetStepper) {
     const plusBtn = targetStepper.querySelector("button:last-child");
     if (plusBtn) {
       for (let i = 0; i < quantity; i++) {
-      plusBtn.click();
-      await sleep(400);
-    }
+        plusBtn.click();
+        await sleep(200);
+      }
       console.log(`[Discord Watcher] Clicked + ${quantity} times`);
-    } else {
-      console.log("[Discord Watcher] Plus button not found");
     }
-  } else {
-    console.log("[Discord Watcher] No stepper found");
   }
 
   // Step 3: Click Find Tickets
-  await sleep(800);
-  const findBtn = document.querySelector("[data-testid='findTicketsBtn']");
+  const findBtn = await waitForButton("find tickets", 3000);
   if (findBtn) {
     findBtn.click();
     console.log("[Discord Watcher] Clicked Find Tickets, starting refresh loop...");
-  } else {
-    console.log("[Discord Watcher] Find Tickets button not found");
   }
-  
-  // Step 4 + 5: Handle popups and refresh loop
-  await sleep(2000);
 
+  // Refresh loop
   let loopCount = 0;
   const MAX_LOOPS = 999;
 
-  while (loopCount < MAX_LOOPS && isRunning()) {
+  while (loopCount < MAX_LOOPS && !_watcherStopped) {
     loopCount++;
 
-    // Check checkout - success!
     if (window.location.href.includes("checkout")) {
       console.log("[Discord Watcher] 🎟️ SUCCESS - Checkout detected!");
+      // Play sound
+      try {
+        const ac = new AudioContext();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.connect(g); g.connect(ac.destination);
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.5, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
+        o.start(); o.stop(ac.currentTime + 0.8);
+        setTimeout(() => {
+          const o2 = ac.createOscillator();
+          const g2 = ac.createGain();
+          o2.connect(g2); g2.connect(ac.destination);
+          o2.frequency.value = 1100;
+          g2.gain.setValueAtTime(0.5, ac.currentTime);
+          g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
+          o2.start(); o2.stop(ac.currentTime + 0.8);
+        }, 400);
+      } catch(e) {}
       break;
     }
 
@@ -124,26 +158,26 @@
         if (el) {
           const label = el.closest("label") || el.parentElement;
           if (label) label.click(); else el.click();
-          await sleep(500);
+          await sleep(300);
           break;
         }
       }
-      await sleep(300);
+      await sleep(200);
       proceedBtn.click();
       console.log("[Discord Watcher] Clicked Proceed to Buy");
-      await sleep(2000);
+      await sleep(1500);
       continue;
     }
 
-    // Check Get Tickets button - success!
+    // Check Get Tickets
     const getTicketsBtn = Array.from(document.querySelectorAll("button")).find(
       btn => btn.textContent.trim() === "Get Tickets"
     ) || document.querySelector("[data-bdd='offer-card-buy-button']");
-    
+
     if (getTicketsBtn && getTicketsBtn.offsetParent !== null) {
       console.log("[Discord Watcher] 🎟️ Get Tickets found! Clicking...");
       getTicketsBtn.click();
-      await sleep(3000);
+      await sleep(2000);
       continue;
     }
 
@@ -156,35 +190,24 @@
     const waitMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
     const waitSec = Math.round(waitMs / 1000);
 
-    // Click Search Again or Find Tickets
+    // Wait for Search Again or Find Tickets to appear
     const searchAgainBtn = Array.from(document.querySelectorAll("button")).find(
       btn => btn.textContent.trim() === "Search Again"
     );
+
     if (searchAgainBtn) {
       searchAgainBtn.click();
       console.log(`[Discord Watcher] Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`);
-      chrome.runtime.sendMessage({
-        type: "CONTENT_LOG",
-        text: `Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`,
-        level: "info"
-      }).catch(() => {});
+      chrome.runtime.sendMessage({ type: "CONTENT_LOG", text: `Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`, level: "info" }).catch(() => {});
     } else {
       const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
       if (findTicketsBtn) {
         findTicketsBtn.click();
         console.log(`[Discord Watcher] Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`);
-        chrome.runtime.sendMessage({
-          type: "CONTENT_LOG",
-          text: `Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`,
-          level: "info"
-        }).catch(() => {});
+        chrome.runtime.sendMessage({ type: "CONTENT_LOG", text: `Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`, level: "info" }).catch(() => {});
       }
     }
 
     await sleep(waitMs);
-  }
-
-  function isRunning() {
-    return !_watcherStopped;
   }
 })();
