@@ -44,6 +44,36 @@
     });
   }
 
+  // Check if we're already on checkout page - send webhook immediately 
+  if (window.location.href.includes("checkout")) { 
+    console.log("[Discord Watcher] 🎟️ Checkout page detected on load!"); 
+    try { 
+      const webhookData = await new Promise(resolve => 
+        chrome.storage.local.get(["filters"], resolve) 
+      ); 
+      const webhook = webhookData.filters?.discordWebhook; 
+      if (webhook) { 
+        await fetch(webhook, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify({ 
+            content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n⚡ Rýchlo klikni a zaplať!` 
+          }) 
+        }).catch(() => {}); 
+      } 
+      // Play sound 
+      const ac = new AudioContext(); 
+      const o = ac.createOscillator(); 
+      const g = ac.createGain(); 
+      o.connect(g); g.connect(ac.destination); 
+      o.frequency.value = 880; 
+      g.gain.setValueAtTime(0.5, ac.currentTime); 
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8); 
+      o.start(); o.stop(ac.currentTime + 0.8); 
+    } catch(e) {} 
+    return; // Stop here, no need to continue 
+  } 
+ 
   // Wait for pendingAlert
   await sleep(500);
 
