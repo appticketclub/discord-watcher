@@ -47,6 +47,7 @@
   // Check if we're already on checkout page - send webhook immediately 
   if (window.location.href.includes("checkout")) { 
     console.log("[Discord Watcher] 🎟️ Checkout page detected on load!"); 
+    // Send webhook first 
     try { 
       const webhookData = await new Promise(resolve => 
         chrome.storage.local.get(["filters"], resolve) 
@@ -61,7 +62,11 @@
           }) 
         }).catch(() => {}); 
       } 
-      // Play sound 
+    } catch(e) {} 
+
+    // Play sound after short delay 
+    await sleep(500); 
+    try { 
       const ac = new AudioContext(); 
       const o = ac.createOscillator(); 
       const g = ac.createGain(); 
@@ -70,7 +75,17 @@
       g.gain.setValueAtTime(0.5, ac.currentTime); 
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8); 
       o.start(); o.stop(ac.currentTime + 0.8); 
+      setTimeout(() => { 
+        const o2 = ac.createOscillator(); 
+        const g2 = ac.createGain(); 
+        o2.connect(g2); g2.connect(ac.destination); 
+        o2.frequency.value = 1100; 
+        g2.gain.setValueAtTime(0.5, ac.currentTime); 
+        g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8); 
+        o2.start(); o2.stop(ac.currentTime + 0.8); 
+      }, 400); 
     } catch(e) {} 
+
     return; // Stop here, no need to continue 
   } 
  
