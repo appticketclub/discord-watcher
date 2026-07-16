@@ -4,7 +4,7 @@ let supabaseKey = null;
 let isWatching = false;
 let watchInterval = null;
 
-let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12 };
+let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12, discordWebhook: "" };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
 // Create keep-alive alarm on install
@@ -148,7 +148,7 @@ async function checkAlerts() {
         continue;
       }
 
-      // All filters passed - open tab
+      // All filters passed - open tab and send webhook
       if (alert.event_url) {
         await chrome.storage.local.set({ pendingAlert: {
           quantity: alert.quantity,
@@ -165,6 +165,32 @@ async function checkAlerts() {
           priority: 2,
         });
         chrome.runtime.sendMessage({ type: "ALERT_OPENED", event_name: alert.event_name, url: alert.event_url });
+        
+        // Send Discord webhook if configured
+        if (filters.discordWebhook) {
+          try {
+            await fetch(filters.discordWebhook, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                embeds: [{
+                  title: "🎟️ Nový Discord Alert!",
+                  description: `**${alert.event_name || "Neznáma akcia"}**`,
+                  fields: [
+                    { name: "URL", value: alert.event_url, inline: false },
+                    { name: "Počet lístkov", value: alert.quantity?.toString() || "-" , inline: true },
+                    { name: "Sekcia", value: alert.section || "-" , inline: true },
+                    { name: "Min. cena", value: alert.price_min ? `${alert.price_min}€` : "-" , inline: true },
+                    { name: "Kanál", value: alert.channel_name || "-" , inline: true }
+                  ],
+                  color: 2067273
+                }]
+              })
+            });
+          } catch (e) {
+            console.error("[Discord Watcher] Failed to send webhook:", e);
+          }
+        }
       }
     }
   } catch(e) {
