@@ -137,6 +137,24 @@
 
     if (window.location.href.includes("checkout")) {
       console.log("[Discord Watcher] 🎟️ SUCCESS - Checkout detected!");
+      
+      // Send Discord webhook notification
+      try {
+        const webhookData = await new Promise(resolve => 
+          chrome.storage.local.get(["filters"], resolve)
+        );
+        const webhook = webhookData.filters?.discordWebhook;
+        if (webhook) {
+          await fetch(webhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n⚡ Rýchlo klikni a zaplať!`
+            })
+          }).catch(() => {});
+        }
+      } catch(e) {}
+
       // Play sound
       try {
         const ac = new AudioContext();
