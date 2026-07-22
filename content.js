@@ -134,18 +134,39 @@
   await sleep(300);
 
   const quantity = alert.quantity || 1;
-  const categoryName = alert.section || null;
+
+  // Map TopSellCZ section names to Ticketmaster names
+  const sectionMapping = {
+    "Zitplaatsen": ["Reserved Seating", "Zitplaatsen", "Seated"],
+    "Staanplaatsen": ["General Admission", "Standing", "Staanplaatsen", "Floor"],
+    "Aisle Seating": ["Aisle Seating", "Gangpadstoelen"],
+    "Golden Circle": ["Golden Circle", "VIP"],
+  };
+
+  const rawSection = alert.section || null;
+  let categoryNames = rawSection ? [rawSection] : [];
+
+  // Add mapped alternatives
+  if (rawSection) {
+    for (const [key, alternatives] of Object.entries(sectionMapping)) {
+      if (rawSection.toLowerCase().includes(key.toLowerCase())) {
+        categoryNames = [...new Set([...categoryNames, ...alternatives])];
+        break;
+      }
+    }
+  }
 
   let targetStepper = null;
   const steppers = document.querySelectorAll("[data-testid='quantityStepper']");
 
-  if (categoryName && steppers.length > 0) {
+  if (categoryNames.length > 0 && steppers.length > 0) {
     for (const stepper of steppers) {
       const li = stepper.closest("li");
       if (li) {
         const spans = li.querySelectorAll("span");
         for (const span of spans) {
-          if (span.textContent.toLowerCase().includes(categoryName.toLowerCase())) {
+          const spanText = span.textContent.toLowerCase();
+          if (categoryNames.some(name => spanText.includes(name.toLowerCase()))) {
             targetStepper = stepper;
             break;
           }
