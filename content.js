@@ -65,6 +65,9 @@
       } 
     } catch(e) {} 
 
+    // Release mutex - tickets found in basket 
+    chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
+
     // Play sound after short delay 
     await sleep(500); 
     try { 
@@ -201,6 +204,9 @@
           }).catch(() => {});
         }
       } catch(e) {}
+
+      // Release mutex - tickets found in basket 
+      chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
 
       // Play sound
       try {

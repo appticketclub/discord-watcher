@@ -6,6 +6,7 @@ let watchInterval = null;
 
 let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12, discordWebhook: "", tmAccount: "" };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
+let isRefreshing = false;
 
 // Create keep-alive alarm on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -53,7 +54,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
   }
 
+  // Reset mutex ONLY when checkout is reached (tickets found)
+  if (msg.type === "CHECKOUT_REACHED") {
+    isRefreshing = false;
+    console.log("[Discord Watcher] Checkout reached, mutex released");
+    sendResponse({ ok: true });
+  }
+
+  // Also reset if watcher is stopped manually
   if (msg.type === "STOP_WATCHING") {
+    isRefreshing = false;
     isWatching = false;
     if (watchInterval) clearInterval(watchInterval);
     chrome.storage.local.set({ isWatching: false });
@@ -150,6 +160,23 @@ async function checkAlerts() {
 
       // All filters passed - open tab and send webhook
       if (alert.event_url) {
+        if (isRefreshing) {
+          console.log("[Discord Watcher] Already refreshing, skipping:", alert.event_name);
+          await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?id=eq.${alert.id}`, {
+            method: "PATCH",
+            headers: {
+              "apikey": key,
+              "Authorization": `Bearer ${key}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({ is_processed: true })
+          });
+          continue;
+        }
+
+        isRefreshing = true;
+        
         await chrome.storage.local.set({ pendingAlert: {
           quantity: alert.quantity,
           section: alert.section,
