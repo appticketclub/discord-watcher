@@ -133,7 +133,12 @@
   await waitForElement("[data-testid='quantityStepper']", 5000);
   await sleep(300);
 
-  const quantity = alert.quantity || 1;
+  const storageData = await new Promise(resolve => 
+    chrome.storage.local.get(["filters"], resolve) 
+  ); 
+  const maxQty = storageData.filters?.maxQty || 2; 
+  const availableQty = alert.quantity || 99; 
+  const quantity = Math.min(availableQty, maxQty); 
 
   // Map TopSellCZ section names to Ticketmaster names
   const sectionMapping = {

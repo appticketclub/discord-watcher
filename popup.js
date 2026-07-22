@@ -20,6 +20,7 @@ const els = {
   blacklist: document.getElementById("blacklist"),
   whitelist: document.getElementById("whitelist"),
   minTickets: document.getElementById("minTickets"),
+  maxQty: document.getElementById("maxQty"),
   maxPrice: document.getElementById("maxPrice"),
   intervalMin: document.getElementById("intervalMin"),
   intervalMax: document.getElementById("intervalMax"),
@@ -53,6 +54,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     els.blacklist.value = data.filters.blacklist || "";
     els.whitelist.value = data.filters.whitelist || "";
     els.minTickets.value = data.filters.minTickets || 1;
+    els.maxQty.value = data.filters.maxQty || 2;
     els.maxPrice.value = data.filters.maxPrice || 500;
     els.intervalMin.value = data.filters.intervalMin || 5;
     els.intervalMax.value = data.filters.intervalMax || 12;
@@ -125,6 +127,7 @@ els.saveSettingsBtn.addEventListener("click", () => {
     blacklist: els.blacklist.value.trim(),
     whitelist: els.whitelist.value.trim(),
     minTickets: parseInt(els.minTickets.value) || 1,
+    maxQty: parseInt(els.maxQty.value) || 2,
     maxPrice: parseFloat(els.maxPrice.value) || 500,
     intervalMin: parseInt(els.intervalMin.value) || 5,
     intervalMax: parseInt(els.intervalMax.value) || 12,
