@@ -53,12 +53,13 @@
         chrome.storage.local.get(["filters"], resolve) 
       ); 
       const webhook = webhookData.filters?.discordWebhook; 
+      const tmAccount = webhookData.filters?.tmAccount; 
       if (webhook) { 
         await fetch(webhook, { 
           method: "POST", 
           headers: { "Content-Type": "application/json" }, 
           body: JSON.stringify({ 
-            content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n⚡ Rýchlo klikni a zaplať!` 
+            content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n${tmAccount ? `👤 **Nakupuješ pod účtom:** ${tmAccount}\n` : ""}⚡ Rýchlo klikni a zaplať!` 
           }) 
         }).catch(() => {}); 
       } 
@@ -189,12 +190,13 @@
           chrome.storage.local.get(["filters"], resolve)
         );
         const webhook = webhookData.filters?.discordWebhook;
+        const tmAccount = webhookData.filters?.tmAccount;
         if (webhook) {
           await fetch(webhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n⚡ Rýchlo klikni a zaplať!`
+              content: `✅ **LÍSTKY NÁJDENÉ!** 🎟️\n🛒 **Checkout link:**\n${window.location.href}\n\n${tmAccount ? `👤 **Nakupuješ pod účtom:** ${tmAccount}\n` : ""}⚡ Rýchlo klikni a zaplať!`
             })
           }).catch(() => {});
         }

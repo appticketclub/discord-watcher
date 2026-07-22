@@ -4,7 +4,7 @@ let supabaseKey = null;
 let isWatching = false;
 let watchInterval = null;
 
-let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12, discordWebhook: "" };
+let filters = { blacklist: "", whitelist: "", minTickets: 1, maxPrice: 500, intervalMin: 5, intervalMax: 12, discordWebhook: "", tmAccount: "" };
 let channels = { NL: true, DE: true, ES: true, WORLD: true, TEST: true };
 
 // Create keep-alive alarm on install
@@ -169,6 +169,16 @@ async function checkAlerts() {
         // Send Discord webhook if configured
         if (filters.discordWebhook) {
           try {
+            const fields = [
+              { name: "URL", value: alert.event_url, inline: false },
+              { name: "Počet lístkov", value: alert.quantity?.toString() || "-" , inline: true },
+              { name: "Sekcia", value: alert.section || "-" , inline: true },
+              { name: "Min. cena", value: alert.price_min ? `${alert.price_min}€` : "-" , inline: true },
+              { name: "Kanál", value: alert.channel_name || "-" , inline: true }
+            ];
+            if (filters.tmAccount) {
+              fields.push({ name: "Účet na Ticketmaster", value: filters.tmAccount, inline: true });
+            }
             await fetch(filters.discordWebhook, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -176,13 +186,7 @@ async function checkAlerts() {
                 embeds: [{
                   title: "🎟️ Nový Discord Alert!",
                   description: `**${alert.event_name || "Neznáma akcia"}**`,
-                  fields: [
-                    { name: "URL", value: alert.event_url, inline: false },
-                    { name: "Počet lístkov", value: alert.quantity?.toString() || "-" , inline: true },
-                    { name: "Sekcia", value: alert.section || "-" , inline: true },
-                    { name: "Min. cena", value: alert.price_min ? `${alert.price_min}€` : "-" , inline: true },
-                    { name: "Kanál", value: alert.channel_name || "-" , inline: true }
-                  ],
+                  fields: fields,
                   color: 2067273
                 }]
               })

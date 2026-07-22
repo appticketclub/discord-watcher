@@ -24,6 +24,7 @@ const els = {
   intervalMin: document.getElementById("intervalMin"),
   intervalMax: document.getElementById("intervalMax"),
   discordWebhook: document.getElementById("discordWebhook"),
+  tmAccount: document.getElementById("tmAccount"),
 };
 
 let timerInterval = null;
@@ -56,6 +57,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     els.intervalMin.value = data.filters.intervalMin || 5;
     els.intervalMax.value = data.filters.intervalMax || 12;
     els.discordWebhook.value = data.filters.discordWebhook || "";
+    els.tmAccount.value = data.filters.tmAccount || "";
   }
   // Load channels
   ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
@@ -127,6 +129,7 @@ els.saveSettingsBtn.addEventListener("click", () => {
     intervalMin: parseInt(els.intervalMin.value) || 5,
     intervalMax: parseInt(els.intervalMax.value) || 12,
     discordWebhook: els.discordWebhook.value.trim(),
+    tmAccount: els.tmAccount.value.trim(),
   };
   const channels = {};
   ["NL","DE","ES","WORLD","TEST"].forEach(ch => {
