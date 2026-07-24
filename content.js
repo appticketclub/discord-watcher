@@ -164,15 +164,19 @@
   let targetStepper = null;
   const steppers = document.querySelectorAll("[data-testid='quantityStepper']");
 
+  console.log("[Discord Watcher] Looking for section:", categoryNames);
+
   if (categoryNames.length > 0 && steppers.length > 0) {
     for (const stepper of steppers) {
       const li = stepper.closest("li");
       if (li) {
         const spans = li.querySelectorAll("span");
         for (const span of spans) {
-          const spanText = span.textContent.toLowerCase();
-          if (categoryNames.some(name => spanText.includes(name.toLowerCase()))) {
+          const spanText = span.textContent.trim();
+          console.log("[Discord Watcher] Checking span:", spanText);
+          if (categoryNames.some(name => spanText.toLowerCase().includes(name.toLowerCase()))) {
             targetStepper = stepper;
+            console.log("[Discord Watcher] MATCH found:", spanText);
             break;
           }
         }
