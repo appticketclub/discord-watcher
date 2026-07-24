@@ -205,7 +205,9 @@
 
   // Refresh loop
   let loopCount = 0;
+  let stuckCount = 0;
   const MAX_LOOPS = 999;
+  const MAX_STUCK = 5; // 5 cycles with no button found = stuck
 
   while (loopCount < MAX_LOOPS && !_watcherStopped) {
     loopCount++;
@@ -315,20 +317,46 @@
     const searchAgainBtn = Array.from(document.querySelectorAll("button")).find(
       btn => btn.textContent.trim() === "Search Again"
     );
+    const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
+
+    // Count stuck cycles
+    if (!searchAgainBtn && !findTicketsBtn && !getTicketsBtn) {
+      stuckCount++;
+      console.log(`[Discord Watcher] No buttons found, stuck count: ${stuckCount}/${MAX_STUCK}`);
+      chrome.runtime.sendMessage({
+        type: "CONTENT_LOG",
+        text: `⚠️ Nenašiel som tlačidlá (${stuckCount}/${MAX_STUCK})`,
+        level: "error"
+      }).catch(() => {});
+
+      if (stuckCount >= MAX_STUCK) {
+        console.log("[Discord Watcher] STUCK - releasing mutex and closing tab");
+        chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {});
+        // Close this tab after short delay
+        await sleep(2000);
+        window.close();
+        return;
+      }
+
+      await sleep(3000);
+      continue;
+    } else {
+      stuckCount = 0; // reset counter when button found
+    }
 
     if (searchAgainBtn) {
       searchAgainBtn.click();
       console.log(`[Discord Watcher] Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`);
       chrome.runtime.sendMessage({ type: "CONTENT_LOG", text: `Cyklus #${loopCount} — Search Again | Ďalší za ${waitSec}s`, level: "info" }).catch(() => {});
-    } else {
-      const findTicketsBtn = document.querySelector("[data-testid='findTicketsBtn']");
-      if (findTicketsBtn) {
-        findTicketsBtn.click();
-        console.log(`[Discord Watcher] Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`);
-        chrome.runtime.sendMessage({ type: "CONTENT_LOG", text: `Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`, level: "info" }).catch(() => {});
-      }
+    } else if (findTicketsBtn) {
+      findTicketsBtn.click();
+      console.log(`[Discord Watcher] Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`);
+      chrome.runtime.sendMessage({ type: "CONTENT_LOG", text: `Cyklus #${loopCount} — Find Tickets | Ďalší za ${waitSec}s`, level: "info" }).catch(() => {});
     }
 
     await sleep(waitMs);
   }
+
+  // Release mutex when loop ends normally
+  chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {});
 })();

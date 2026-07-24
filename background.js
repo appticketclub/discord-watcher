@@ -61,6 +61,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
   }
 
+  if (msg.type === "STUCK_RELEASE") {
+    isRefreshing = false;
+    console.log("[Discord Watcher] Stuck detected, mutex released");
+    sendResponse({ ok: true });
+  }
+
   // Also reset if watcher is stopped manually
   if (msg.type === "STOP_WATCHING") {
     isRefreshing = false;
