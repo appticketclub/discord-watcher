@@ -127,6 +127,13 @@
   if (bestAvailableBtn) {
     bestAvailableBtn.click();
     console.log("[Discord Watcher] Clicked See best available");
+  } else {
+    // Page didn't load properly - save alert and reload
+    console.log("[Discord Watcher] See best available not found - reloading page");
+    const currentAlert = alert;
+    await chrome.storage.local.set({ pendingAlert: currentAlert });
+    window.location.reload();
+    return;
   }
 
   // Step 2: Wait for steppers and click +
