@@ -93,15 +93,22 @@
     return; // Stop here, no need to continue 
   } 
  
-  // Wait for pendingAlert
-  await sleep(500);
+  // Wait for pendingAlert with retry
+  let alertData = null;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await sleep(500);
+    const data = await new Promise(resolve =>
+      chrome.storage.local.get(["pendingAlert"], resolve)
+    );
+    if (data.pendingAlert) {
+      alertData = data;
+      break;
+    }
+    console.log(`[Discord Watcher] Waiting for pendingAlert... attempt ${attempt + 1}/10`);
+  }
 
-  const alertData = await new Promise(resolve =>
-    chrome.storage.local.get(["pendingAlert"], resolve)
-  );
-
-  if (!alertData.pendingAlert) {
-    console.log("[Discord Watcher] No pending alert, skipping.");
+  if (!alertData?.pendingAlert) {
+    console.log("[Discord Watcher] No pending alert after 10 attempts, skipping.");
     return;
   }
 
