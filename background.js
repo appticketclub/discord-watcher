@@ -189,6 +189,10 @@ async function checkAlerts() {
           price_min: alert.price_min,
           event_name: alert.event_name
         }});
+
+        // Wait 1 second to ensure storage is written before tab opens
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         chrome.tabs.create({ url: alert.event_url });
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
