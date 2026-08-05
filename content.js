@@ -1,3 +1,29 @@
+// Auto-dismiss common popups 
+function dismissPopups() { 
+  // Google Translate 
+  const gtFrame = document.querySelector(".goog-te-banner-frame"); 
+  if (gtFrame) gtFrame.style.display = "none"; 
+  document.body.style.top = "0px"; 
+  
+  // Cookie banners 
+  const cookieSelectors = [ 
+    "[id*='cookie'] button[id*='accept']", 
+    "[class*='cookie'] button[class*='accept']", 
+    "[id*='consent'] button", 
+    ".onetrust-accept-btn-handler", 
+    "#onetrust-accept-btn-handler", 
+  ]; 
+  for (const sel of cookieSelectors) { 
+    const btn = document.querySelector(sel); 
+    if (btn) { btn.click(); break; } 
+  } 
+} 
+ 
+// Run immediately and after DOM changes 
+dismissPopups(); 
+setTimeout(dismissPopups, 1000); 
+setTimeout(dismissPopups, 2000); 
+ 
 (async function() {
   let _watcherStopped = false;
 
