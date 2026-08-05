@@ -70,6 +70,22 @@
 
     // Play sound after short delay 
     await sleep(500); 
+    // Dismiss Google Translate popup if present 
+    try { 
+      const translateClose = document.querySelector(".goog-te-banner-frame")  || 
+        document.querySelector("#goog-gt-tt")  || 
+        document.querySelector(".skiptranslate"); 
+      if (translateClose) { 
+        // Click "No thanks" or close button 
+        const noThanks = document.querySelector(".goog-te-banner-frame .close")  || 
+          Array.from(document.querySelectorAll("button")).find(b =>  
+            b.textContent.includes("No thanks") || b.textContent.includes("Nee") || b.textContent.includes("Nein") 
+          ); 
+        if (noThanks) noThanks.click(); 
+      } 
+    } catch(e) {} 
+ 
+    await sleep(500); 
     try { 
       const ac = new AudioContext(); 
       const o = ac.createOscillator(); 
@@ -115,6 +131,24 @@
   const alert = alertData.pendingAlert;
   console.log("[Discord Watcher] Auto selecting tickets:", alert);
   chrome.storage.local.remove(["pendingAlert"]);
+
+  await sleep(500);
+  // Dismiss Google Translate popup if present 
+  try { 
+    const translateClose = document.querySelector(".goog-te-banner-frame")  || 
+      document.querySelector("#goog-gt-tt")  || 
+      document.querySelector(".skiptranslate"); 
+    if (translateClose) { 
+      // Click "No thanks" or close button 
+      const noThanks = document.querySelector(".goog-te-banner-frame .close")  || 
+        Array.from(document.querySelectorAll("button")).find(b =>  
+          b.textContent.includes("No thanks") || b.textContent.includes("Nee") || b.textContent.includes("Nein") 
+        ); 
+      if (noThanks) noThanks.click(); 
+    } 
+  } catch(e) {} 
+ 
+  await sleep(500);
 
   // Step 0: Check for Queue and join if present
   const joinQueueBtn = document.querySelector("[data-bdd='lobby-card-CTAButton']") ||
