@@ -259,8 +259,69 @@ setTimeout(dismissPopups, 2000);
     }
   }
 
+  // Fallback: match by price from alert
+  if (!targetStepper && alert.price_min && steppers.length > 0) {
+    console.log("[Discord Watcher] Trying price-based matching, price:", alert.price_min);
+    
+    for (const stepper of steppers) {
+      const li = stepper.closest("li");
+      if (li) {
+        // Find price spans containing "each"
+        const spans = Array.from(li.querySelectorAll("span"));
+        for (const span of spans) {
+          const text = span.textContent;
+          if (!text.includes("each") && !text.includes("per stuk")) continue;
+          
+          // Extract price number from span
+          const priceMatch = text.match(/€?([\d,.]+)/);
+          if (!priceMatch) continue;
+          
+          const spanPrice = parseFloat(priceMatch[1].replace(",", "."));
+          const alertPrice = parseFloat(alert.price_min);
+          
+          // Match if price is within 5% tolerance
+          const diff = Math.abs(spanPrice - alertPrice) / alertPrice;
+          console.log(`[Discord Watcher] Price check: span=${spanPrice} alert=${alertPrice} diff=${(diff*100).toFixed(1)}%`);
+          
+          if (diff <= 0.05) {
+            // Check not blacklisted
+            const sectionBlacklist = (storageData.filters?.sectionBlacklist || "Wheelchair\nAccessible")
+              .split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
+            const isBlacklisted = spans.some(s =>
+              sectionBlacklist.some(b => s.textContent.toLowerCase().includes(b))
+            );
+            
+            if (!isBlacklisted) {
+              targetStepper = stepper;
+              console.log("[Discord Watcher] Price MATCH found:", spanPrice);
+              break;
+            }
+          }
+        }
+      }
+      if (targetStepper) break;
+    }
+  }
+
+  // Final fallback - first non-blacklisted stepper
   if (!targetStepper && steppers.length > 0) {
-    targetStepper = steppers[0];
+    const sectionBlacklist = (storageData.filters?.sectionBlacklist || "Wheelchair\nAccessible")
+      .split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
+    
+    for (const stepper of steppers) {
+      const li = stepper.closest("li");
+      if (li) {
+        const spans = Array.from(li.querySelectorAll("span"));
+        const isBlacklisted = spans.some(s =>
+          sectionBlacklist.some(b => s.textContent.toLowerCase().includes(b))
+        );
+        if (!isBlacklisted) {
+          targetStepper = stepper;
+          console.log("[Discord Watcher] Using first non-blacklisted stepper");
+          break;
+        }
+      }
+    }
   }
 
   if (targetStepper) {
