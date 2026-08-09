@@ -24,6 +24,8 @@ const els = {
   maxPrice: document.getElementById("maxPrice"),
   intervalMin: document.getElementById("intervalMin"),
   intervalMax: document.getElementById("intervalMax"),
+  pauseAfterCycles: document.getElementById("pauseAfterCycles"),
+  pauseDuration: document.getElementById("pauseDuration"),
   discordWebhook: document.getElementById("discordWebhook"),
   tmAccount: document.getElementById("tmAccount"),
 };
@@ -58,6 +60,8 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     els.maxPrice.value = data.filters.maxPrice || 500;
     els.intervalMin.value = data.filters.intervalMin || 5;
     els.intervalMax.value = data.filters.intervalMax || 12;
+    els.pauseAfterCycles.value = data.filters?.pauseAfterCycles || 0;
+    els.pauseDuration.value = data.filters?.pauseDuration || 60;
     els.discordWebhook.value = data.filters.discordWebhook || "";
     els.tmAccount.value = data.filters.tmAccount || "";
   }
@@ -131,6 +135,8 @@ els.saveSettingsBtn.addEventListener("click", () => {
     maxPrice: parseFloat(els.maxPrice.value) || 500,
     intervalMin: parseInt(els.intervalMin.value) || 5,
     intervalMax: parseInt(els.intervalMax.value) || 12,
+    pauseAfterCycles: parseInt(els.pauseAfterCycles.value) || 0,
+    pauseDuration: parseInt(els.pauseDuration.value) || 60,
     discordWebhook: els.discordWebhook.value.trim(),
     tmAccount: els.tmAccount.value.trim(),
   };

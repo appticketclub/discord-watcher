@@ -345,11 +345,37 @@ setTimeout(dismissPopups, 2000);
   // Refresh loop
   let loopCount = 0;
   let stuckCount = 0;
+  let cyclesSincePause = 0;
   const MAX_LOOPS = 999;
   const MAX_STUCK = 5; // 5 cycles with no button found = stuck
 
   while (loopCount < MAX_LOOPS && !_watcherStopped) {
     loopCount++;
+    cyclesSincePause++;
+
+    // Get pause settings
+    const pauseData = await new Promise(resolve =>
+      chrome.storage.local.get(["filters"], resolve)
+    );
+    const pauseAfterCycles = pauseData.filters?.pauseAfterCycles || 0;
+    const pauseDuration = (pauseData.filters?.pauseDuration || 60) * 1000;
+
+    if (pauseAfterCycles > 0 && cyclesSincePause >= pauseAfterCycles) {
+      console.log(`[Discord Watcher] Pauza na ${pauseData.filters?.pauseDuration || 60}s...`);
+      chrome.runtime.sendMessage({
+        type: "CONTENT_LOG",
+        text: `⏸️ Pauza na ${pauseData.filters?.pauseDuration || 60}s (po ${pauseAfterCycles} cykloch)`,
+        level: "info"
+      }).catch(() => {});
+      await sleep(pauseDuration);
+      cyclesSincePause = 0;
+      console.log("[Discord Watcher] Pauza skončila, pokračujem...");
+      chrome.runtime.sendMessage({
+        type: "CONTENT_LOG",
+        text: `▶️ Pauza skončila, pokračujem...`,
+        level: "success"
+      }).catch(() => {});
+    }
 
     if (window.location.href.includes("checkout")) {
       console.log("[Discord Watcher] 🎟️ SUCCESS - Checkout detected!");
