@@ -188,22 +188,27 @@ async function checkAlerts() {
         isRefreshing = true;
         chrome.storage.local.set({ isRefreshing: true });
         
-        await chrome.storage.local.set({ pendingAlert: {
-          quantity: alert.quantity,
-          section: alert.section,
-          price_min: alert.price_min,
-          event_name: alert.event_name
-        }});
-
-        // Wait 1 second to ensure storage is written before tab opens
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
         let eventUrl = alert.event_url;
         if (eventUrl && eventUrl.includes('ticketmaster')) {
           const separator = eventUrl.includes('?') ? '&' : '?';
           eventUrl = `${eventUrl}${separator}language=en-us`;
         }
-        chrome.tabs.create({ url: eventUrl });
+
+        // Set pendingAlert and open tab in callback to avoid service worker sleep
+        chrome.storage.local.set({
+          pendingAlert: {
+            quantity: alert.quantity,
+            section: alert.section,
+            price_min: alert.price_min,
+            event_name: alert.event_name
+          }
+        }, () => {
+          // Open tab immediately in callback - no await, no sleep
+          setTimeout(() => {
+            chrome.tabs.create({ url: eventUrl });
+          }, 500);
+        });
+
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
           iconUrl: "icons/icon128.png",
