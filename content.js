@@ -93,6 +93,7 @@ setTimeout(dismissPopups, 2000);
 
     // Release mutex - tickets found in basket 
     chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
+    chrome.storage.local.set({ isRefreshing: false });
 
     // Play sound after short delay 
     await sleep(500); 
@@ -183,6 +184,7 @@ setTimeout(dismissPopups, 2000);
   if (!isTicketmaster) { 
     console.log("[Discord Watcher] Not a Ticketmaster page:", window.location.hostname, "- releasing mutex"); 
     chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {}); 
+    chrome.storage.local.set({ isRefreshing: false });
     await chrome.storage.local.remove(["pendingAlert", "reloadCount"]); 
     return; 
   } 
@@ -217,6 +219,7 @@ setTimeout(dismissPopups, 2000);
       console.log("[Discord Watcher] Too many reloads, releasing mutex");
       await chrome.storage.local.remove(["reloadCount", "pendingAlert"]);
       chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {});
+      chrome.storage.local.set({ isRefreshing: false });
       return;
     }
     
@@ -427,6 +430,7 @@ setTimeout(dismissPopups, 2000);
 
       // Release mutex - tickets found in basket 
       chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
+      chrome.storage.local.set({ isRefreshing: false });
 
       // Play sound
       try {
@@ -524,6 +528,7 @@ setTimeout(dismissPopups, 2000);
       if (stuckCount >= MAX_STUCK) {
         console.log("[Discord Watcher] STUCK - releasing mutex and closing tab");
         chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {});
+        chrome.storage.local.set({ isRefreshing: false });
         // Close this tab after short delay
         await sleep(2000);
         window.close();
@@ -551,4 +556,5 @@ setTimeout(dismissPopups, 2000);
 
   // Release mutex when loop ends normally
   chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {});
+  chrome.storage.local.set({ isRefreshing: false });
 })();
