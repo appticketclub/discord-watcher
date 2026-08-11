@@ -114,7 +114,13 @@ async function checkAlerts() {
   const key = supabaseKey || SUPABASE_KEY;
   if (!key || !isWatching) return;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?is_processed=eq.false&order=created_at.desc&limit=10`, {
+    const localData = await new Promise(resolve =>
+      chrome.storage.local.get(["processedAlerts"], resolve)
+    );
+    const processedAlerts = new Set(localData.processedAlerts || []);
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?created_at=gte.${oneHourAgo}&order=created_at.desc&limit=20`, {
       headers: {
         "apikey": key,
         "Authorization": `Bearer ${key}`,
@@ -124,25 +130,17 @@ async function checkAlerts() {
     if (!alerts || alerts.length === 0) return;
 
     for (const alert of alerts) {
-      // Mark as processed first
-      await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?id=eq.${alert.id}`, {
-        method: "PATCH",
-        headers: {
-          "apikey": key,
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({ is_processed: true })
-      });
+      if (processedAlerts.has(alert.id)) continue;
 
-      // Check channel filter
+      processedAlerts.add(alert.id);
+      const processedArray = [...processedAlerts].slice(-100);
+      chrome.storage.local.set({ processedAlerts: processedArray });
+
       if (alert.channel_name && !channels[alert.channel_name]) {
         chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (kanál)" });
         continue;
       }
 
-      // Check whitelist
       if (filters.whitelist) {
         const whitelist = filters.whitelist.split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
         if (whitelist.length > 0) {
@@ -154,7 +152,6 @@ async function checkAlerts() {
         }
       }
 
-      // Check blacklist
       if (filters.blacklist) {
         const blacklist = filters.blacklist.split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
         const name = (alert.event_name || "").toLowerCase();
@@ -164,32 +161,19 @@ async function checkAlerts() {
         }
       }
 
-      // Check min tickets
       if (alert.quantity && alert.quantity < filters.minTickets) {
         chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (málo lístkov)" });
         continue;
       }
 
-      // Check max price
       if (alert.price_min && alert.price_min > filters.maxPrice) {
         chrome.runtime.sendMessage({ type: "ALERT_FILTERED", event_name: alert.event_name + " (vysoká cena)" });
         continue;
       }
 
-      // All filters passed - open tab and send webhook
       if (alert.event_url) {
         if (isRefreshing) {
           console.log("[Discord Watcher] Already refreshing, skipping:", alert.event_name);
-          await fetch(`${SUPABASE_URL}/rest/v1/discord_alerts?id=eq.${alert.id}`, {
-            method: "PATCH",
-            headers: {
-              "apikey": key,
-              "Authorization": `Bearer ${key}`,
-              "Content-Type": "application/json",
-              "Prefer": "return=minimal"
-            },
-            body: JSON.stringify({ is_processed: true })
-          });
           continue;
         }
 
@@ -202,7 +186,6 @@ async function checkAlerts() {
           eventUrl = `${eventUrl}${separator}language=en-us`;
         }
 
-        // Set pendingAlert and open tab in callback to avoid service worker sleep
         chrome.storage.local.set({
           pendingAlert: {
             quantity: alert.quantity,
@@ -211,7 +194,6 @@ async function checkAlerts() {
             event_name: alert.event_name
           }
         }, () => {
-          // Open tab immediately in callback - no await, no sleep
           setTimeout(() => {
             chrome.tabs.create({ url: eventUrl });
           }, 500);
@@ -226,7 +208,6 @@ async function checkAlerts() {
         });
         chrome.runtime.sendMessage({ type: "ALERT_OPENED", event_name: alert.event_name, url: alert.event_url });
         
-        // Send Discord webhook if configured
         if (filters.discordWebhook) {
           try {
             const fields = [
