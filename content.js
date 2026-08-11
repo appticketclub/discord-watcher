@@ -135,6 +135,17 @@ setTimeout(dismissPopups, 2000);
     return; // Stop here, no need to continue 
   } 
  
+  // Check if this is a Ticketmaster page 
+  const validDomains = ['ticketmaster.com', 'ticketmaster.nl', 'ticketmaster.de', 'ticketmaster.es', 'ticketmaster.be', 'ticketmaster.co.uk', 'ticketmaster.at', 'ticketmaster.cz', 'ticketmaster.sk','ticketmaster.fr']; 
+  const isTicketmaster = validDomains.some(d => window.location.hostname.includes(d)); 
+ 
+  if (!isTicketmaster) { 
+    console.log("[Discord Watcher] Not a Ticketmaster page, releasing mutex:", window.location.hostname); 
+    chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {}); 
+    chrome.storage.local.remove(["pendingAlert", "reloadCount"]); 
+    return; 
+  } 
+ 
   // Wait for pendingAlert with retry
   let alertData = null;
   for (let attempt = 0; attempt < 10; attempt++) {
