@@ -50,8 +50,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "START_WATCHING") {
     supabaseKey = msg.supabaseKey;
     isWatching = true;
-    chrome.storage.local.set({ isWatching: true, supabaseKey: msg.supabaseKey });
-    startWatching();
+    isRefreshing = false;
+    chrome.storage.local.set({ isWatching: true, supabaseKey: msg.supabaseKey, isRefreshing: false });
+    
+    // Load filters first then start
+    chrome.storage.local.get(["filters", "channels"], (data) => {
+      if (data.filters) filters = data.filters;
+      if (data.channels) channels = data.channels;
+      startWatching();
+    });
+    
     sendResponse({ ok: true });
   }
 
