@@ -135,17 +135,6 @@ setTimeout(dismissPopups, 2000);
     return; // Stop here, no need to continue 
   } 
  
-  // Check if this is a Ticketmaster page 
-  const validDomains = ['ticketmaster.com', 'ticketmaster.nl', 'ticketmaster.de', 'ticketmaster.es', 'ticketmaster.be', 'ticketmaster.co.uk', 'ticketmaster.at', 'ticketmaster.cz', 'ticketmaster.sk','ticketmaster.fr']; 
-  const isTicketmaster = validDomains.some(d => window.location.hostname.includes(d)); 
- 
-  if (!isTicketmaster) { 
-    console.log("[Discord Watcher] Not a Ticketmaster page, releasing mutex:", window.location.hostname); 
-    chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {}); 
-    chrome.storage.local.remove(["pendingAlert", "reloadCount"]); 
-    return; 
-  } 
- 
   // Wait for pendingAlert with retry
   let alertData = null;
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -186,6 +175,17 @@ setTimeout(dismissPopups, 2000);
   } catch(e) {} 
  
   await sleep(500);
+
+  // Check if this is a valid Ticketmaster page 
+  const validDomains = ['ticketmaster.com', 'ticketmaster.nl', 'ticketmaster.de', 'ticketmaster.es', 'ticketmaster.be', 'ticketmaster.co.uk', 'ticketmaster.at', 'ticketmaster.cz', 'ticketmaster.sk', 'ticketmaster.fr', 'ticketmaster.ie', 'ticketmaster.se', 'ticketmaster.no', 'ticketmaster.dk', 'ticketmaster.fi', 'ticketmaster.pl']; 
+  const isTicketmaster = validDomains.some(d => window.location.hostname.includes(d)); 
+ 
+  if (!isTicketmaster) { 
+    console.log("[Discord Watcher] Not a Ticketmaster page:", window.location.hostname, "- releasing mutex"); 
+    chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {}); 
+    await chrome.storage.local.remove(["pendingAlert", "reloadCount"]); 
+    return; 
+  } 
 
   // Step 0: Check for Queue and join if present
   const joinQueueBtn = document.querySelector("[data-bdd='lobby-card-CTAButton']") ||
