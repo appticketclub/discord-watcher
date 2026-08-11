@@ -29,10 +29,11 @@ chrome.alarms.get("keepAlive", (alarm) => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepAlive") {
     console.log("[Discord Watcher] Keep-alive tick - checking alerts...");
-    chrome.storage.local.get(["isWatching", "supabaseKey"], (data) => {
+    chrome.storage.local.get(["isWatching", "supabaseKey", "isRefreshing"], (data) => {
       if (data.isWatching) {
         supabaseKey = data.supabaseKey || SUPABASE_KEY;
         isWatching = true;
+        isRefreshing = data.isRefreshing || false;
         checkAlerts();
       }
     });
@@ -57,12 +58,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Reset mutex ONLY when checkout is reached (tickets found)
   if (msg.type === "CHECKOUT_REACHED") {
     isRefreshing = false;
+    chrome.storage.local.set({ isRefreshing: false });
     console.log("[Discord Watcher] Checkout reached, mutex released");
     sendResponse({ ok: true });
   }
 
   if (msg.type === "STUCK_RELEASE") {
     isRefreshing = false;
+    chrome.storage.local.set({ isRefreshing: false });
     console.log("[Discord Watcher] Stuck detected, mutex released");
     sendResponse({ ok: true });
   }
@@ -70,6 +73,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Also reset if watcher is stopped manually
   if (msg.type === "STOP_WATCHING") {
     isRefreshing = false;
+    chrome.storage.local.set({ isRefreshing: false });
     isWatching = false;
     if (watchInterval) clearInterval(watchInterval);
     chrome.storage.local.set({ isWatching: false });
@@ -182,6 +186,7 @@ async function checkAlerts() {
         }
 
         isRefreshing = true;
+        chrome.storage.local.set({ isRefreshing: true });
         
         await chrome.storage.local.set({ pendingAlert: {
           quantity: alert.quantity,
@@ -251,10 +256,15 @@ function startWatching() {
 }
 
 // Restore state on startup
-chrome.storage.local.get(["isWatching", "supabaseKey"], (data) => {
+chrome.storage.local.get(["isWatching", "supabaseKey", "isRefreshing"], (data) => {
   if (data.isWatching && data.supabaseKey) {
     supabaseKey = data.supabaseKey;
     isWatching = true;
+    isRefreshing = data.isRefreshing || false;
     startWatching();
   }
+});
+
+chrome.storage.local.get(["isRefreshing"], (data) => {
+  isRefreshing = data.isRefreshing || false;
 });
