@@ -156,7 +156,7 @@ setTimeout(dismissPopups, 2000);
 
   const alert = alertData.pendingAlert;
   console.log("[Discord Watcher] Auto selecting tickets:", alert);
-  chrome.storage.local.remove(["pendingAlert"]);
+  chrome.storage.local.remove(["pendingAlert", "reloadCount"]);
 
   await sleep(500);
   // Dismiss Google Translate popup if present 
@@ -195,10 +195,26 @@ setTimeout(dismissPopups, 2000);
     bestAvailableBtn.click();
     console.log("[Discord Watcher] Clicked See best available");
   } else {
-    // Page didn't load properly - save alert and reload
-    console.log("[Discord Watcher] See best available not found - reloading page");
-    const currentAlert = alert;
-    await chrome.storage.local.set({ pendingAlert: currentAlert });
+    // Check reload count
+    const reloadData = await new Promise(resolve =>
+      chrome.storage.local.get(["reloadCount"], resolve)
+    );
+    const reloadCount = reloadData.reloadCount || 0;
+    
+    if (reloadCount >= 2) {
+      // Too many reloads - give up and release mutex
+      console.log("[Discord Watcher] Too many reloads, releasing mutex");
+      await chrome.storage.local.remove(["reloadCount", "pendingAlert"]);
+      chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {});
+      return;
+    }
+    
+    // Reload and increment counter
+    console.log("[Discord Watcher] See best available not found - reloading page", reloadCount + 1, "/2");
+    await chrome.storage.local.set({ 
+      pendingAlert: alert, 
+      reloadCount: reloadCount + 1 
+    });
     window.location.reload();
     return;
   }
