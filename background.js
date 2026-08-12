@@ -195,8 +195,8 @@ async function checkAlerts() {
         }
 
         const alertParam = encodeURIComponent(JSON.stringify(pendingAlertData));
-        const separator = eventUrl.includes('?') ? '&' : '?';
-        chrome.tabs.create({ url: `${eventUrl}${separator}tc_alert=${alertParam}` });
+        const alertSeparator = eventUrl.includes('?') ? '&' : '?';
+        chrome.tabs.create({ url: `${eventUrl}${alertSeparator}tc_alert=${alertParam}` });
 
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
