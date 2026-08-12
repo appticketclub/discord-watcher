@@ -144,14 +144,25 @@ setTimeout(dismissPopups, 2000);
   const urlParams = new URLSearchParams(window.location.search);
   const tcAlert = urlParams.get("tc_alert");
 
-  if (!tcAlert) {
-    console.log("[Discord Watcher] No alert in URL, skipping.");
-    chrome.storage.local.set({ isRefreshing: false });
-    return;
+  let alert = null;
+  if (tcAlert) {
+    alert = JSON.parse(decodeURIComponent(tcAlert));
+    console.log("[Discord Watcher] Alert from URL:", alert);
+  } else {
+    // Fallback to storage (after reload)
+    const storageAlert = await new Promise(resolve =>
+      chrome.storage.local.get(["pendingAlert"], resolve)
+    );
+    if (storageAlert.pendingAlert) {
+      alert = storageAlert.pendingAlert;
+      console.log("[Discord Watcher] Alert from storage (after reload):", alert);
+      chrome.storage.local.remove(["pendingAlert"]);
+    } else {
+      console.log("[Discord Watcher] No alert in URL or storage, skipping.");
+      chrome.storage.local.set({ isRefreshing: false });
+      return;
+    }
   }
-
-  const alert = JSON.parse(decodeURIComponent(tcAlert));
-  console.log("[Discord Watcher] Alert from URL:", alert);
 
   await sleep(500);
   // Dismiss Google Translate popup if present 
@@ -220,7 +231,8 @@ setTimeout(dismissPopups, 2000);
     // Reload and increment counter
     console.log("[Discord Watcher] See best available not found - reloading page", reloadCount + 1, "/2");
     await chrome.storage.local.set({ 
-      reloadCount: reloadCount + 1 
+      reloadCount: reloadCount + 1,
+      pendingAlert: alert // save as backup before reload
     });
     window.location.reload();
     return;
