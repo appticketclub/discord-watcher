@@ -19,6 +19,33 @@ function dismissPopups() {
   } 
 } 
  
+// Auto-play sound if we're on checkout page (runs immediately on page load)
+if (window.location.href.includes('checkout')) {
+  try {
+    const ac = new AudioContext();
+    const o1 = ac.createOscillator();
+    const g1 = ac.createGain();
+    o1.connect(g1);
+    g1.connect(ac.destination);
+    o1.frequency.value = 880;
+    g1.gain.setValueAtTime(0.5, ac.currentTime);
+    g1.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
+    o1.start();
+    o1.stop(ac.currentTime + 0.8);
+    setTimeout(() => {
+      const o2 = ac.createOscillator();
+      const g2 = ac.createGain();
+      o2.connect(g2);
+      g2.connect(ac.destination);
+      o2.frequency.value = 1100;
+      g2.gain.setValueAtTime(0.5, ac.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
+      o2.start();
+      o2.stop(ac.currentTime + 0.8);
+    }, 400);
+  } catch(e) {}
+}
+
 // Run immediately and after DOM changes 
 dismissPopups(); 
 setTimeout(dismissPopups, 1000); 
@@ -95,8 +122,6 @@ setTimeout(dismissPopups, 2000);
     chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
     chrome.storage.local.set({ isRefreshing: false });
 
-    // Play sound after short delay 
-    await sleep(500); 
     // Dismiss Google Translate popup if present 
     try { 
       const translateClose = document.querySelector(".goog-te-banner-frame")  || 
@@ -110,27 +135,6 @@ setTimeout(dismissPopups, 2000);
           ); 
         if (noThanks) noThanks.click(); 
       } 
-    } catch(e) {} 
- 
-    await sleep(500); 
-    try { 
-      const ac = new AudioContext(); 
-      const o = ac.createOscillator(); 
-      const g = ac.createGain(); 
-      o.connect(g); g.connect(ac.destination); 
-      o.frequency.value = 880; 
-      g.gain.setValueAtTime(0.5, ac.currentTime); 
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8); 
-      o.start(); o.stop(ac.currentTime + 0.8); 
-      setTimeout(() => { 
-        const o2 = ac.createOscillator(); 
-        const g2 = ac.createGain(); 
-        o2.connect(g2); g2.connect(ac.destination); 
-        o2.frequency.value = 1100; 
-        g2.gain.setValueAtTime(0.5, ac.currentTime); 
-        g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8); 
-        o2.start(); o2.stop(ac.currentTime + 0.8); 
-      }, 400); 
     } catch(e) {} 
 
     return; // Stop here, no need to continue 
@@ -432,26 +436,6 @@ setTimeout(dismissPopups, 2000);
       chrome.runtime.sendMessage({ type: "CHECKOUT_REACHED" }).catch(() => {}); 
       chrome.storage.local.set({ isRefreshing: false });
 
-      // Play sound
-      try {
-        const ac = new AudioContext();
-        const o = ac.createOscillator();
-        const g = ac.createGain();
-        o.connect(g); g.connect(ac.destination);
-        o.frequency.value = 880;
-        g.gain.setValueAtTime(0.5, ac.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
-        o.start(); o.stop(ac.currentTime + 0.8);
-        setTimeout(() => {
-          const o2 = ac.createOscillator();
-          const g2 = ac.createGain();
-          o2.connect(g2); g2.connect(ac.destination);
-          o2.frequency.value = 1100;
-          g2.gain.setValueAtTime(0.5, ac.currentTime);
-          g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
-          o2.start(); o2.stop(ac.currentTime + 0.8);
-        }, 400);
-      } catch(e) {}
       break;
     }
 
