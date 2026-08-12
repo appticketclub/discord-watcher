@@ -53,15 +53,10 @@ setTimeout(dismissPopups, 2000);
  
 (async function() {
   let _watcherStopped = false;
-  let receivedAlert = null;
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "STOP_CONTENT") {
       _watcherStopped = true;
-    }
-    if (msg.type === "PENDING_ALERT") {
-      receivedAlert = msg.alert;
-      console.log("[Discord Watcher] Alert received via message:", receivedAlert);
     }
   });
 
@@ -144,37 +139,19 @@ setTimeout(dismissPopups, 2000);
 
     return; // Stop here, no need to continue 
   } 
- 
-  // Wait for pendingAlert with retry
-  let alertData = null;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    await sleep(500);
 
-    // Check message first
-    if (receivedAlert) {
-      alertData = { pendingAlert: receivedAlert };
-      break;
-    }
+  // Get alert from URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const tcAlert = urlParams.get("tc_alert");
 
-    // Fallback to storage
-    const data = await new Promise(resolve =>
-      chrome.storage.local.get(["pendingAlert"], resolve)
-    );
-    if (data.pendingAlert) {
-      alertData = data;
-      break;
-    }
-    console.log(`[Discord Watcher] Waiting for pendingAlert... attempt ${attempt + 1}/10`);
-  }
-
-  if (!alertData?.pendingAlert) {
-    console.log("[Discord Watcher] No pending alert after 10 attempts, skipping.");
+  if (!tcAlert) {
+    console.log("[Discord Watcher] No alert in URL, skipping.");
+    chrome.storage.local.set({ isRefreshing: false });
     return;
   }
 
-  const alert = alertData.pendingAlert;
-  console.log("[Discord Watcher] Auto selecting tickets:", alert);
-  chrome.storage.local.remove(["pendingAlert", "reloadCount"]);
+  const alert = JSON.parse(decodeURIComponent(tcAlert));
+  console.log("[Discord Watcher] Alert from URL:", alert);
 
   await sleep(500);
   // Dismiss Google Translate popup if present 
@@ -202,7 +179,7 @@ setTimeout(dismissPopups, 2000);
     console.log("[Discord Watcher] Not a Ticketmaster page:", window.location.hostname, "- releasing mutex"); 
     chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {}); 
     chrome.storage.local.set({ isRefreshing: false });
-    await chrome.storage.local.remove(["pendingAlert", "reloadCount"]); 
+    await chrome.storage.local.remove(["reloadCount"]); 
     return; 
   } 
 
@@ -234,7 +211,7 @@ setTimeout(dismissPopups, 2000);
     if (reloadCount >= 2) {
       // Too many reloads - give up and release mutex
       console.log("[Discord Watcher] Too many reloads, releasing mutex");
-      await chrome.storage.local.remove(["reloadCount", "pendingAlert"]);
+      await chrome.storage.local.remove(["reloadCount"]);
       chrome.runtime.sendMessage({ type: "STUCK_RELEASE" }).catch(() => {});
       chrome.storage.local.set({ isRefreshing: false });
       return;
@@ -243,7 +220,6 @@ setTimeout(dismissPopups, 2000);
     // Reload and increment counter
     console.log("[Discord Watcher] See best available not found - reloading page", reloadCount + 1, "/2");
     await chrome.storage.local.set({ 
-      pendingAlert: alert, 
       reloadCount: reloadCount + 1 
     });
     window.location.reload();

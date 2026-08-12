@@ -194,31 +194,9 @@ async function checkAlerts() {
           eventUrl = `${eventUrl}${separator}language=en-us`;
         }
 
-        // Use Promise to ensure storage is written before tab opens
-        await new Promise((resolve) => {
-          chrome.storage.local.set({ pendingAlert: pendingAlertData }, resolve);
-        });
-
-        // Verify it was saved
-        const verify = await new Promise(resolve =>
-          chrome.storage.local.get(["pendingAlert"], resolve)
-        );
-        console.log("[Discord Watcher] pendingAlert saved:", !!verify.pendingAlert);
-
-        chrome.tabs.create({ url: eventUrl }, (tab) => {
-          // Send alert via message when tab finishes loading
-          chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-            if (tabId === tab.id && changeInfo.status === "complete") {
-              chrome.tabs.onUpdated.removeListener(listener);
-              setTimeout(() => {
-                chrome.tabs.sendMessage(tab.id, {
-                  type: "PENDING_ALERT",
-                  alert: pendingAlertData
-                }).catch(() => {});
-              }, 500);
-            }
-          });
-        });
+        const alertParam = encodeURIComponent(JSON.stringify(pendingAlertData));
+        const separator = eventUrl.includes('?') ? '&' : '?';
+        chrome.tabs.create({ url: `${eventUrl}${separator}tc_alert=${alertParam}` });
 
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",

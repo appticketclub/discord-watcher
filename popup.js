@@ -108,7 +108,7 @@ els.toggleBtn.addEventListener("click", async () => {
     // Start
     const now = Date.now();
     // Reset all state before starting
-    chrome.storage.local.remove(["isRefreshing", "pendingAlert", "reloadCount"]);
+    chrome.storage.local.remove(["isRefreshing", "reloadCount"]);
 
     // Then start watching
     chrome.runtime.sendMessage({ type: "START_WATCHING", supabaseKey: SUPABASE_KEY }, () => {
