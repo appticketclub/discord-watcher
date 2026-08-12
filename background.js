@@ -179,25 +179,33 @@ async function checkAlerts() {
 
         isRefreshing = true;
         chrome.storage.local.set({ isRefreshing: true });
-        
+
+        const pendingAlertData = {
+          id: alert.id,
+          quantity: alert.quantity,
+          section: alert.section,
+          price_min: alert.price_min,
+          event_name: alert.event_name
+        };
+
         let eventUrl = alert.event_url;
         if (eventUrl && eventUrl.includes('ticketmaster')) {
           const separator = eventUrl.includes('?') ? '&' : '?';
           eventUrl = `${eventUrl}${separator}language=en-us`;
         }
 
-        chrome.storage.local.set({
-          pendingAlert: {
-            quantity: alert.quantity,
-            section: alert.section,
-            price_min: alert.price_min,
-            event_name: alert.event_name
-          }
-        }, () => {
-          setTimeout(() => {
-            chrome.tabs.create({ url: eventUrl });
-          }, 500);
+        // Use Promise to ensure storage is written before tab opens
+        await new Promise((resolve) => {
+          chrome.storage.local.set({ pendingAlert: pendingAlertData }, resolve);
         });
+
+        // Verify it was saved
+        const verify = await new Promise(resolve =>
+          chrome.storage.local.get(["pendingAlert"], resolve)
+        );
+        console.log("[Discord Watcher] pendingAlert saved:", !!verify.pendingAlert);
+
+        chrome.tabs.create({ url: eventUrl });
 
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
