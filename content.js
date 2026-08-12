@@ -53,10 +53,15 @@ setTimeout(dismissPopups, 2000);
  
 (async function() {
   let _watcherStopped = false;
+  let receivedAlert = null;
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "STOP_CONTENT") {
       _watcherStopped = true;
+    }
+    if (msg.type === "PENDING_ALERT") {
+      receivedAlert = msg.alert;
+      console.log("[Discord Watcher] Alert received via message:", receivedAlert);
     }
   });
 
@@ -144,6 +149,14 @@ setTimeout(dismissPopups, 2000);
   let alertData = null;
   for (let attempt = 0; attempt < 10; attempt++) {
     await sleep(500);
+
+    // Check message first
+    if (receivedAlert) {
+      alertData = { pendingAlert: receivedAlert };
+      break;
+    }
+
+    // Fallback to storage
     const data = await new Promise(resolve =>
       chrome.storage.local.get(["pendingAlert"], resolve)
     );

@@ -205,7 +205,20 @@ async function checkAlerts() {
         );
         console.log("[Discord Watcher] pendingAlert saved:", !!verify.pendingAlert);
 
-        chrome.tabs.create({ url: eventUrl });
+        chrome.tabs.create({ url: eventUrl }, (tab) => {
+          // Send alert via message when tab finishes loading
+          chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+            if (tabId === tab.id && changeInfo.status === "complete") {
+              chrome.tabs.onUpdated.removeListener(listener);
+              setTimeout(() => {
+                chrome.tabs.sendMessage(tab.id, {
+                  type: "PENDING_ALERT",
+                  alert: pendingAlertData
+                }).catch(() => {});
+              }, 500);
+            }
+          });
+        });
 
         chrome.notifications.create("alert_" + Date.now(), {
           type: "basic",
