@@ -107,6 +107,10 @@ els.toggleBtn.addEventListener("click", async () => {
   } else {
     // Start
     const now = Date.now();
+    // Reset all state before starting
+    chrome.storage.local.remove(["isRefreshing", "pendingAlert", "reloadCount", "processedAlerts"]);
+
+    // Then start watching
     chrome.runtime.sendMessage({ type: "START_WATCHING", supabaseKey: SUPABASE_KEY }, () => {
       chrome.storage.local.set({ watcherStartTime: now });
       setWatcherUI(true, now);
