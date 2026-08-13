@@ -41,8 +41,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     try {
       const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}&type=discord_watcher`);
       const text = await res.text();
-      const json = JSON.parse(text);
-      if (json.valid) {
+      if (text.startsWith("VALID")) {
         showActivated(data.isWatching, data.watcherStartTime);
       }
     } catch {
@@ -85,8 +84,7 @@ els.activateBtn.addEventListener("click", async () => {
     await chrome.storage.local.set({ profileId });
     const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(key)}&email=${encodeURIComponent(email)}&profileId=${encodeURIComponent(profileId)}&forceActivate=true&type=discord_watcher`);
     const text = (await res.text()).trim();
-    const json = JSON.parse(text);
-    if (json.valid) {
+    if (text.startsWith("VALID")) {
       await chrome.storage.local.set({ licenseKey: key, userEmail: email });
       els.licenseMsg.textContent = "✓ Licencia platná"; els.licenseMsg.style.color = "#34d399";
       showActivated(false, null);
