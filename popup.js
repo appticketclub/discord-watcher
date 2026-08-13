@@ -39,7 +39,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
   if (data.licenseKey) {
     els.licenseKey.value = data.licenseKey;
     try {
-      const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}`);
+      const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}&type=discord_watcher`);
       const text = await res.text();
       if (text.startsWith("VALID")) {
         showActivated(data.isWatching, data.watcherStartTime);
@@ -82,7 +82,7 @@ els.activateBtn.addEventListener("click", async () => {
     await chrome.storage.local.remove(["profileId"]);
     const profileId = "profile_" + Math.random().toString(36).substr(2, 16) + "_" + Date.now();
     await chrome.storage.local.set({ profileId });
-    const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(key)}&email=${encodeURIComponent(email)}&profileId=${encodeURIComponent(profileId)}&forceActivate=true`);
+    const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(key)}&email=${encodeURIComponent(email)}&profileId=${encodeURIComponent(profileId)}&forceActivate=true&type=discord_watcher`);
     const text = (await res.text()).trim();
     if (text.startsWith("VALID")) {
       await chrome.storage.local.set({ licenseKey: key, userEmail: email });
