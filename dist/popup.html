@@ -6,131 +6,139 @@
   <title>TicketClub Discord Watcher</title>
 </head>
 <body>
-  <!-- License section -->
-  <div id="licenseSection">
-    <div class="header">
-      <h1>TicketClub Discord Watcher</h1>
-    </div>
-    <div class="section">
-      <label class="label">EMAIL</label>
-      <input id="userEmail" type="email" placeholder="Email z app.ticketclub.vip" class="input">
-      <label class="label">LICENČNÍ KLÍČ</label>
-      <input id="licenseKey" type="text" placeholder="TC-XXXX-XXXX-XXXX" class="input">
-      <div id="licenseMsg" class="msg"></div>
-      <button id="activateBtn" class="btn-primary">Aktivovat</button>
-    </div>
-  </div>
-
-  <!-- Main section -->
-  <div id="settingsSection" class="hidden">
-    <div class="header">
-      <div class="header-left">
-        <span id="statusDot" class="status-dot"></span>
-        <span id="statusText">Neaktívny</span>
-      </div>
-      <button id="settingsBtn" class="icon-btn" title="Nastavenia">⚙️</button>
-    </div>
-
-    <!-- Timer -->
-    <div id="timerBar" class="timer-bar hidden">
-      <span>Beží: </span><span id="timerText">00:00:00</span>
-    </div>
-
-    <!-- Main button -->
-    <button id="toggleBtn" class="btn-primary">▶ Spustiť Watcher</button>
-
-    <!-- Log -->
-    <div class="label" style="margin-top:12px">LOG</div>
-    <div id="statusLog" class="log"></div>
-  </div>
-
-  <!-- Settings panel -->
-  <div id="settingsPanel" class="hidden">
-    <div class="header">
-      <button id="backBtn" class="icon-btn">← Späť</button>
-      <h2>Nastavenia</h2>
-    </div>
-
-    <!-- Channels -->
-    <div class="section">
-      <div class="label">KANÁLY</div>
-      <div class="filter-row"><span>NL</span><input type="checkbox" id="ch_NL" checked></div>
-      <div class="filter-row"><span>DE</span><input type="checkbox" id="ch_DE" checked></div>
-      <div class="filter-row"><span>ES</span><input type="checkbox" id="ch_ES" checked></div>
-      <div class="filter-row"><span>WORLD</span><input type="checkbox" id="ch_WORLD" checked></div>
-      <div class="filter-row"><span>TEST</span><input type="checkbox" id="ch_TEST" checked></div>
-    </div>
-
-    <!-- Blacklist -->
-    <div class="section">
-      <div class="label">BLACKLIST (ignoruj tieto akcie)</div>
-      <textarea id="blacklist" placeholder="Bruno Mars&#10;Justin Bieber&#10;(každý na nový riadok)" class="textarea"></textarea>
-    </div>
-
-    <!-- Whitelist -->
-    <div class="section">
-      <div class="label">WHITELIST (len tieto akcie, prázdne = všetky)</div>
-      <textarea id="whitelist" placeholder="Coldplay&#10;Taylor Swift&#10;(každý na nový riadok)" class="textarea"></textarea>
-    </div>
-
-    <!-- Min tickets / Max price -->
-    <div class="section">
-      <div class="filter-row">
-        <span>Min. lístkov</span>
-        <input type="number" id="minTickets" value="1" min="1" max="10" class="input-small">
-      </div>
-      <div class="filter-row">
-        <span>Chcem kúpiť max</span>
-        <input type="number" id="maxQty" value="2" min="1" max="10" class="input-small">
-      </div>
-      <div class="filter-row">
-        <span>Max. cena (€)</span>
-        <input type="number" id="maxPrice" value="500" class="input-small">
+  <div class="container">
+    <!-- License section -->
+    <div id="licenseSection">
+      <div class="card">
+        <div class="header">
+          <h1>TicketClub Discord Watcher</h1>
+        </div>
+        <div class="section">
+          <label class="label">EMAIL</label>
+          <input id="userEmail" type="email" placeholder="Email z app.ticketclub.vip" class="input">
+          <label class="label">LICENČNÍ KLÍČ</label>
+          <input id="licenseKey" type="text" placeholder="TC-XXXX-XXXX-XXXX" class="input">
+          <div id="licenseMsg" class="msg"></div>
+          <button id="activateBtn" class="btn-primary">Aktivovat</button>
+        </div>
       </div>
     </div>
 
-    <!-- Interval refresovania -->
-    <div class="section">
-      <div class="label">INTERVAL REFRESHOVANIA</div>
-      <div class="filter-row">
-        <span>Min. sekúnd</span>
-        <input type="number" id="intervalMin" value="5" min="1" max="60" class="input-small">
-      </div>
-      <div class="filter-row">
-        <span>Max. sekúnd</span>
-        <input type="number" id="intervalMax" value="12" min="1" max="60" class="input-small">
+    <!-- Main section -->
+    <div id="settingsSection" class="hidden">
+      <div class="card">
+        <div class="header">
+          <div class="header-left">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">Neaktívny</span>
+          </div>
+          <button id="settingsBtn" class="icon-btn" title="Nastavenia">⚙️</button>
+        </div>
+
+        <!-- Timer -->
+        <div id="timerBar" class="timer-bar hidden">
+          <span>Beží: </span><span id="timerText">00:00:00</span>
+        </div>
+
+        <!-- Main button -->
+        <button id="toggleBtn" class="btn-primary">▶ Spustiť Watcher</button>
+
+        <!-- Log -->
+        <div class="label" style="margin-top:12px">LOG</div>
+        <div id="statusLog" class="log"></div>
       </div>
     </div>
 
-    <!-- Pause cycle -->
-    <div class="section">
-      <div class="label">PAUZA PO CYKLOCH</div>
-      <div class="filter-row">
-        <span>Pauza po X cykloch</span>
-        <input type="number" id="pauseAfterCycles" value="0" min="0" max="999" class="input-small" placeholder="0=vypnuto">
+    <!-- Settings panel -->
+    <div id="settingsPanel" class="hidden">
+      <div class="card">
+        <div class="header">
+          <button id="backBtn" class="icon-btn">← Späť</button>
+          <h2>Nastavenia</h2>
+        </div>
+
+        <!-- Channels -->
+        <div class="section">
+          <div class="label">KANÁLY</div>
+          <div class="filter-row"><span>NL</span><input type="checkbox" id="ch_NL" checked></div>
+          <div class="filter-row"><span>DE</span><input type="checkbox" id="ch_DE" checked></div>
+          <div class="filter-row"><span>ES</span><input type="checkbox" id="ch_ES" checked></div>
+          <div class="filter-row"><span>WORLD</span><input type="checkbox" id="ch_WORLD" checked></div>
+          <div class="filter-row"><span>TEST</span><input type="checkbox" id="ch_TEST" checked></div>
+        </div>
+
+        <!-- Blacklist -->
+        <div class="section">
+          <div class="label">BLACKLIST (ignoruj tieto akcie)</div>
+          <textarea id="blacklist" placeholder="Bruno Mars&#10;Justin Bieber&#10;(každý na nový riadok)" class="textarea"></textarea>
+        </div>
+
+        <!-- Whitelist -->
+        <div class="section">
+          <div class="label">WHITELIST (len tieto akcie, prázdne = všetky)</div>
+          <textarea id="whitelist" placeholder="Coldplay&#10;Taylor Swift&#10;(každý na nový riadok)" class="textarea"></textarea>
+        </div>
+
+        <!-- Min tickets / Max price -->
+        <div class="section">
+          <div class="filter-row">
+            <span>Min. lístkov</span>
+            <input type="number" id="minTickets" value="1" min="1" max="10" class="input-small">
+          </div>
+          <div class="filter-row">
+            <span>Chcem kúpiť max</span>
+            <input type="number" id="maxQty" value="2" min="1" max="10" class="input-small">
+          </div>
+          <div class="filter-row">
+            <span>Max. cena (€)</span>
+            <input type="number" id="maxPrice" value="500" class="input-small">
+          </div>
+        </div>
+
+        <!-- Interval refresovania -->
+        <div class="section">
+          <div class="label">INTERVAL REFRESHovanIA</div>
+          <div class="filter-row">
+            <span>Min. sekúnd</span>
+            <input type="number" id="intervalMin" value="5" min="1" max="60" class="input-small">
+          </div>
+          <div class="filter-row">
+            <span>Max. sekúnd</span>
+            <input type="number" id="intervalMax" value="12" min="1" max="60" class="input-small">
+          </div>
+        </div>
+
+        <!-- Pause cycle -->
+        <div class="section">
+          <div class="label">PAUZA PO CYKLOCH</div>
+          <div class="filter-row">
+            <span>Pauza po X cykloch</span>
+            <input type="number" id="pauseAfterCycles" value="0" min="0" max="999" class="input-small" placeholder="0=vypnuto">
+          </div>
+          <div class="filter-row">
+            <span>Trvanie pauzy (sek)</span>
+            <input type="number" id="pauseDuration" value="60" min="5" max="3600" class="input-small">
+          </div>
+          <div style="font-size: 11px; color: #525252; margin-top: 4px;">0 cyklov = pauza vypnutá</div>
+        </div>
+
+        <!-- Ticketmaster account reminder -->
+        <div class="section">
+          <div class="label">ÚČET TICKETMASTER</div>
+          <input type="email" id="tmAccount" placeholder="email@gmail.com" class="input">
+          <div style="font-size: 11px; color: #525252; margin-top: 4px;">E-mailová adresa účtu, pod kterým nakupuješ</div>
+        </div>
+
+        <!-- Discord Webhook -->
+        <div class="section">
+          <div class="label">DISCORD NOTIFIKÁCIA</div>
+          <input type="text" id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." class="input">
+          <div style="font-size: 11px; color: #525252; margin-top: 4px;">Webhook URL z tvojho Discord kanála — dostaneš checkout link keď bot nájde lístky</div>
+        </div>
+
+        <button id="saveSettingsBtn" class="btn-primary">Uložiť nastavenia</button>
       </div>
-      <div class="filter-row">
-        <span>Trvanie pauzy (sek)</span>
-        <input type="number" id="pauseDuration" value="60" min="5" max="3600" class="input-small">
-      </div>
-      <div style="font-size: 11px; color: #525252; margin-top: 4px;">0 cyklov = pauza vypnutá</div>
     </div>
-
-    <!-- Ticketmaster account reminder -->
-    <div class="section">
-      <div class="label">ÚČET TICKETMASTER</div>
-      <input type="email" id="tmAccount" placeholder="email@gmail.com" class="input">
-      <div style="font-size: 11px; color: #525252; margin-top: 4px;">E-mailová adresa účtu, pod kterým nakupuješ</div>
-    </div>
-
-    <!-- Discord Webhook -->
-    <div class="section">
-      <div class="label">DISCORD NOTIFIKÁCIA</div>
-      <input type="text" id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." class="input">
-      <div style="font-size: 11px; color: #525252; margin-top: 4px;">Webhook URL z tvojho Discord kanála — dostaneš checkout link keď bot nájde lístky</div>
-    </div>
-
-    <button id="saveSettingsBtn" class="btn-primary">Uložiť nastavenia</button>
   </div>
 
   <script src="popup.js"></script>
