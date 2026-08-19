@@ -41,8 +41,7 @@ chrome.storage.local.get(["licenseKey", "userEmail", "isWatching", "watcherStart
     try {
       const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(data.licenseKey)}&email=${encodeURIComponent(data.userEmail)}&type=discord_watcher`);
       const text = await res.text();
-      const isValid = text.startsWith("VALID") || (JSON.parse(text).valid === true);
-      if (isValid) {
+      if (text.trim().startsWith("VALID")) {
         showActivated(data.isWatching, data.watcherStartTime);
       }
     } catch {
@@ -85,13 +84,18 @@ els.activateBtn.addEventListener("click", async () => {
     await chrome.storage.local.set({ profileId });
     const res = await fetch(`https://app.ticketclub.vip/api/extension/verify?key=${encodeURIComponent(key)}&email=${encodeURIComponent(email)}&profileId=${encodeURIComponent(profileId)}&forceActivate=true&type=discord_watcher`);
     const text = (await res.text()).trim();
-    const isValid = text.startsWith("VALID") || (JSON.parse(text).valid === true);
-    if (isValid) {
+
+    if (text.startsWith("VALID")) {
       await chrome.storage.local.set({ licenseKey: key, userEmail: email });
-      els.licenseMsg.textContent = "✓ Licencia platná"; els.licenseMsg.style.color = "#34d399";
+      els.licenseMsg.textContent = "✓ Licencia platná";
+      els.licenseMsg.style.color = "#34d399";
       showActivated(false, null);
+    } else if (text === "SCALE_REQUIRED") {
+      els.licenseMsg.textContent = "✗ Vyžaduje Scale plán";
+      els.licenseMsg.style.color = "#f87171";
     } else {
-      els.licenseMsg.textContent = "✗ Neplatný kľúč"; els.licenseMsg.style.color = "#f87171";
+      els.licenseMsg.textContent = "✗ Neplatný kľúč";
+      els.licenseMsg.style.color = "#f87171";
     }
   } catch { els.licenseMsg.textContent = "✗ Chyba pripojenia"; els.licenseMsg.style.color = "#f87171"; }
 });
